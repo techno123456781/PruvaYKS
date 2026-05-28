@@ -1,0 +1,2197 @@
+<!DOCTYPE html>
+<html lang="tr"><head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
+<meta name="theme-color" content="#0b1326"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>PruvaYKS</title>
+<style>*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body,#root{height:100%;margin:0;padding:0;overflow:hidden;overscroll-behavior:none;-webkit-overflow-scrolling:touch}body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0b1326;color:#dae2fd}input,textarea,button,select{font-family:inherit}input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1)}</style>
+</head><body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+<script>
+window.onerror=function(m,s,l,c,e){document.getElementById('root').innerHTML='<div style="padding:24px;background:#0b1326;min-height:100vh;color:#dae2fd"><h3 style="color:#ffb4ab">Hata</h3><pre style="font-size:11px;white-space:pre-wrap;color:#c7c4d8">'+(e?e.stack:m+'\nLine:'+l)+'</pre></div>';return true;};
+const {useState,useEffect,useRef,useCallback,useMemo} = React;
+
+// ─── FIREBASE ────────────────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyCAu4Pj7gXF5VWV_ns_28zOCwsoTiuzLFM",
+  authDomain: "pruvayks.firebaseapp.com",
+  projectId: "pruvayks",
+  storageBucket: "pruvayks.firebasestorage.app",
+  messagingSenderId: "931735724866",
+  appId: "1:931735724866:web:ca4c96d81a874799155edb"
+};
+const fbApp = initializeApp(firebaseConfig);
+const fbAuth = getAuth(fbApp);
+const fbDb = getFirestore(fbApp);
+
+// ─── VERİ ────────────────────────────────────────────────────────────────────
+const MUF = {
+  "TYT Türkçe":{a:["SAY","EA","SOZ"],t:[{n:"Sözcükte Anlam",d:1},{n:"Cümlede Anlam",d:2},{n:"Paragraf",d:3},{n:"Anlatım Bozuklukları",d:2},{n:"Ses Bilgisi",d:1},{n:"Yazım Kuralları",d:1},{n:"Noktalama",d:1},{n:"Sözcük Türleri",d:2},{n:"Fiiller",d:2},{n:"Fiilimsiler",d:2},{n:"Cümlenin Ögeleri",d:2},{n:"Cümle Türleri",d:2},{n:"Anlatım Teknikleri",d:2}]},
+  "TYT Matematik":{a:["SAY","EA","SOZ"],t:[{n:"Temel Kavramlar",d:1},{n:"Sayı Basamakları",d:1},{n:"Bölme-Bölünebilme",d:1},{n:"OBEB-OKEK",d:1},{n:"Rasyonel Sayılar",d:1},{n:"Basit Eşitsizlikler",d:2},{n:"Mutlak Değer",d:2},{n:"Üslü Sayılar",d:2},{n:"Köklü Sayılar",d:2},{n:"Çarpanlara Ayırma",d:2},{n:"Oran-Orantı",d:2},{n:"Problemler",d:4},{n:"Kümeler",d:2},{n:"Fonksiyon",d:2},{n:"Permütasyon-Olasılık",d:3},{n:"Veri-İstatistik",d:2}]},
+  "TYT Geometri":{a:["SAY","EA","SOZ"],t:[{n:"Doğruda Açılar",d:1},{n:"Üçgenler",d:3},{n:"Dörtgenler",d:2},{n:"Çokgenler",d:1},{n:"Çember-Daire",d:2},{n:"Katı Cisimler",d:2},{n:"Analitik Geo Temel",d:2}]},
+  "TYT Fizik":{a:["SAY","EA","SOZ"],t:[{n:"Fizik Bilimine Giriş",d:1},{n:"Madde ve Özellikleri",d:1},{n:"Hareket ve Kuvvet",d:3},{n:"İş-Güç-Enerji",d:2},{n:"Isı ve Sıcaklık",d:2},{n:"Basınç",d:2},{n:"Elektrik",d:2},{n:"Manyetizma",d:2},{n:"Dalgalar",d:2},{n:"Optik",d:2}]},
+  "TYT Kimya":{a:["SAY","EA","SOZ"],t:[{n:"Kimya Bilimi",d:1},{n:"Atom ve Periyodik Sistem",d:2},{n:"Kimyasal Etkileşim",d:2},{n:"Maddenin Halleri",d:2},{n:"Kimyanın Temel Kanunları",d:2},{n:"Karışımlar",d:2},{n:"Asit-Baz-Tuz",d:2}]},
+  "TYT Biyoloji":{a:["SAY","EA","SOZ"],t:[{n:"Canlıların Ortak Özellikleri",d:1},{n:"Hücre",d:2},{n:"Sınıflandırma",d:2},{n:"Hücre Bölünmeleri",d:2},{n:"Kalıtım Temelleri",d:2},{n:"Ekosistem-Çevre",d:2}]},
+  "TYT Tarih":{a:["SAY","EA","SOZ"],t:[{n:"İlk Çağ Uygarlıkları",d:1},{n:"İslam Öncesi Türk Tarihi",d:1},{n:"İslam Tarihi",d:1},{n:"Osmanlı Kuruluş",d:2},{n:"Kurtuluş Savaşı",d:2}]},
+  "TYT Coğrafya":{a:["SAY","EA","SOZ"],t:[{n:"Harita Bilgisi",d:1},{n:"Dünya Şekli",d:1},{n:"İklim",d:2},{n:"Nüfus",d:1},{n:"Türkiye Coğrafyası",d:2}]},
+  "TYT Felsefe":{a:["SAY","EA","SOZ"],t:[{n:"Felsefenin Alanı",d:1},{n:"Bilgi Felsefesi",d:1},{n:"Ahlak Felsefesi",d:1},{n:"Din Felsefesi",d:1}]},
+  "TYT Din Kültürü":{a:["SAY","EA","SOZ"],t:[{n:"İnanç",d:1},{n:"İbadet",d:1},{n:"Ahlak",d:1},{n:"Hz. Muhammed",d:1}]},
+  "AYT Matematik":{a:["SAY","EA"],t:[{n:"Fonksiyonlar",d:2},{n:"Polinomlar",d:2},{n:"2. Derece Denklemler",d:2},{n:"Parabol",d:2},{n:"Trigonometri",d:4},{n:"Logaritma",d:3},{n:"Diziler",d:3},{n:"Limit",d:3},{n:"Türev",d:5},{n:"İntegral",d:5}]},
+  "AYT Geometri":{a:["SAY"],t:[{n:"Analitik Geometri",d:3},{n:"Çember-Daire AYT",d:2},{n:"Katı Cisimler AYT",d:2},{n:"Uzay Geometri",d:3}]},
+  "AYT Fizik":{a:["SAY"],t:[{n:"Vektörler",d:1},{n:"Newton Yasaları",d:3},{n:"Tork-Denge",d:2},{n:"Elektrik Alan",d:3},{n:"Manyetik Alan",d:3},{n:"Alternatif Akım",d:2},{n:"Modern Fizik",d:3},{n:"Atom Fiziği",d:2}]},
+  "AYT Kimya":{a:["SAY"],t:[{n:"Gazlar",d:3},{n:"Çözeltiler",d:2},{n:"Tepkime Enerjisi",d:2},{n:"Tepkime Hızı",d:2},{n:"Kimyasal Denge",d:4},{n:"Asit-Baz Dengesi",d:3},{n:"Elektrokimya",d:3},{n:"Organik Kimya",d:5}]},
+  "AYT Biyoloji":{a:["SAY"],t:[{n:"Sinir Sistemi",d:2},{n:"Duyu Organları",d:1},{n:"Endokrin Sistem",d:2},{n:"Destek-Hareket",d:1},{n:"Solunum",d:2},{n:"Dolaşım",d:2},{n:"Boşaltım",d:1},{n:"Üreme",d:2},{n:"Bitki Biyolojisi",d:2},{n:"Fotosentez",d:3},{n:"Ekoloji",d:2},{n:"Evrim",d:2}]},
+  "AYT Edebiyat":{a:["EA","SOZ"],t:[{n:"Edebiyat Akımları",d:2},{n:"İslamiyet Öncesi",d:2},{n:"Divan Edebiyatı",d:3},{n:"Halk Edebiyatı",d:2},{n:"Tanzimat",d:2},{n:"Servet-i Fünun",d:2},{n:"Milli Edebiyat",d:2},{n:"Cumhuriyet Dönemi",d:3}]},
+  "AYT Tarih EA":{a:["EA"],t:[{n:"Osmanlı Kültür-Medeniyet",d:2},{n:"17-18.yy Osmanlı",d:2},{n:"19.yy Osmanlı",d:2},{n:"Kurtuluş Savaşı AYT",d:3},{n:"İnkılap",d:3}]},
+  "AYT Coğrafya EA":{a:["EA"],t:[{n:"Türkiye Ekonomisi",d:2},{n:"Ulaşım",d:1},{n:"Enerji Kaynakları",d:2},{n:"Nüfus Politikaları",d:2},{n:"Küresel Çevre",d:2}]},
+  "AYT Tarih SOZ":{a:["SOZ"],t:[{n:"Türk-İslam Devletleri",d:3},{n:"Osmanlı Devleti",d:4},{n:"Dünya Tarihi",d:3},{n:"Çağdaş Türk-Dünya Tarihi",d:4}]},
+  "AYT Coğrafya SOZ":{a:["SOZ"],t:[{n:"Türkiye Beşeri Coğrafyası",d:3},{n:"Türkiye Fiziki Coğrafyası",d:3},{n:"Küresel Ticaret",d:2},{n:"Jeopolitik",d:2}]},
+  "AYT Felsefe Grubu":{a:["SOZ"],t:[{n:"Psikoloji",d:3},{n:"Sosyoloji",d:3},{n:"Mantık",d:2}]},
+};
+
+const DERSLER = {
+  TYT: ["Türkçe","Matematik","Sosyal","Fen"],
+  AYT: ["Matematik","Fen Bilimleri","Edebiyat-Sos1","Sosyal-2"]
+};
+
+const MORALLER = [
+  {e:"🔥",m:"Bugün attığın her adım, sınav gününde fark yaratacak!"},
+  {e:"💪",m:"Zorluk seni durdurmak için değil, güçlendirmek için var."},
+  {e:"🌟",m:"Dün nereden başladığına değil, bugün nereye gittiğine bak."},
+  {e:"🎯",m:"Hedef net, odak tam. Sen hazırsın — haydi çalış!"},
+  {e:"🧠",m:"Tekrar eden kazanır. Her soru, yarının başarısıdır."},
+  {e:"⚡",m:"Yorulduğunda dur, ama vazgeçme. Mola ver, geri dön."},
+  {e:"🌅",m:"Her yeni gün yeni bir şans. Dünü bırak, bugüne odaklan."},
+  {e:"📚",m:"Okuduğun her sayfa, bilmediğin bir soruyu doğruya çeviriyor."},
+  {e:"🏆",m:"Şampiyonlar antrenmanı sevmez — ama yine de yaparlar."},
+  {e:"💡",m:"Anlamadan ezber yok. Bugün anladığın konu yarın seni uçurur."},
+  {e:"🚀",m:"Küçük adımlar küçük değildir — her gün biraz daha ileri."},
+  {e:"🎓",m:"Sınav sadece bir gün. Bugünkü çalışman ömür boyu seninle."},
+  {e:"💎",m:"Elmas da baskı altında oluşur. Parlamak için buradasın."},
+  {e:"🌱",m:"Büyüme konforlu hissettirmez — o his, gelişimin işareti."},
+  {e:"🔑",m:"Bu programı bitirirsen, sınav kapısının anahtarı sende."},
+  {e:"🏅",m:"Kazananlar farklı yeteneklere sahip değil — daha uzun devam ettiler."},
+  {e:"☀️",m:"Güneş her gün doğar. Sen de her gün yeniden başlayabilirsin."},
+  {e:"🧩",m:"Her konu bir parça. Bugün bir tane daha tamamladın."},
+  {e:"🦋",m:"Dönüşüm kolay olmaz. Kelebek çabaladığı için uçabilir."},
+  {e:"📌",m:"Planına sadık kal. Tutarlılık, dehanın önüne geçer."},
+  {e:"🌈",m:"Zor günler de bu yolculuğun parçası. Geçecek, güçleneceksin."},
+  {e:"🦅",m:"Kartal yükselmek için rüzgara ihtiyaç duyar. Zorluklar seni yükseltir."},
+];
+
+function lsGet(k) { try { return JSON.parse(localStorage.getItem(k)); } catch(e) { return null; } }
+function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} }
+
+function getBrans(n) {
+  n = n.toLowerCase();
+  if (n.includes("türkçe")||n.includes("paragraf")||n.includes("edebiyat")||n.includes("divan")||n.includes("tanzimat")) return "DIL";
+  if (n.includes("matematik")||n.includes("fonksiyon")||n.includes("logaritma")||n.includes("türev")||n.includes("integral")||n.includes("trigono")||n.includes("limit")) return "MAT";
+  if (n.includes("geometri")||n.includes("üçgen")||n.includes("çember")||n.includes("uzay")) return "GEO";
+  if (n.includes("fizik")||n.includes("hareket")||n.includes("kuvvet")||n.includes("enerji")||n.includes("newton")) return "FIZ";
+  if (n.includes("kimya")||n.includes("atom")||n.includes("gaz")||n.includes("organik")||n.includes("asit")) return "KIM";
+  if (n.includes("biyoloji")||n.includes("hücre")||n.includes("sinir")||n.includes("fotosentez")||n.includes("evrim")) return "BIO";
+  if (n.includes("tarih")||n.includes("osmanlı")||n.includes("inkılap")) return "TAR";
+  if (n.includes("coğrafya")||n.includes("iklim")||n.includes("nüfus")) return "COG";
+  return "DIG";
+}
+
+function makePlan(selTopics, dateStr) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const target = new Date(dateStr);
+  const totalDays = Math.ceil((target - today) / 86400000);
+  if (totalDays < 2) return null;
+  const slots = [];
+  selTopics.forEach(t => {
+    const b = getBrans(t.name);
+    for (let s = 1; s <= t.duration; s++) slots.push({name:t.name, step:s, total:t.duration, brans:b});
+  });
+  const sunIdx = new Set(), workIdx = [];
+  for (let i = 0; i < totalDays; i++) {
+    const d = new Date(today); d.setDate(today.getDate()+i);
+    if (d.getDay() === 0) sunIdx.add(i); else workIdx.push(i);
+  }
+  const ppd = Math.max(2, Math.min(workIdx.length > 0 ? Math.ceil(slots.length/workIdx.length) : 3, 9));
+  const grps = {};
+  slots.forEach(s => { if (!grps[s.brans]) grps[s.brans] = []; grps[s.brans].push(s); });
+  const qs = Object.values(grps).sort((a,b) => b.length-a.length);
+  const interleaved = [];
+  let safety = slots.length * 2;
+  while (interleaved.length < slots.length && safety-- > 0) {
+    for (const q of qs) { if (q.length > 0 && interleaved.length < slots.length) interleaved.push(q.shift()); }
+  }
+  const daySlots = {}; let si = 0;
+  for (const wi of workIdx) {
+    daySlots[wi] = [];
+    for (let c = 0; c < ppd && si < interleaved.length; c++, si++) daySlots[wi].push(interleaved[si]);
+  }
+  const rutins = [
+    {i:"20-30 Paragraf Sorusu",n:"Okuduğunu anlama & hız"},
+    {i:"15-20 Matematik Sorusu",n:"Analitik düşünce pratiği"},
+    {i:"15 Sözel Muhakeme",n:"Anlam & çıkarım odaklı"},
+    {i:"Geometri Alıştırma",n:"Şekil ve formül pratiği"},
+  ];
+  const tekrars = [
+    {i:"🔁 TYT Paragraf Tekrarı",n:"20 soru hızlı tara"},
+    {i:"🔁 Formüller Tekrarı",n:"Tüm formülleri gözden geçir"},
+    {i:"🔁 Zayıf Konu Tekrarı",n:"Yanlış yaptıklarını çöz"},
+  ];
+  let wc = 0, wk = 0, ti = 0;
+  const plan = [];
+  for (let i = 0; i < totalDays; i++) {
+    const d = new Date(today); d.setDate(today.getDate()+i);
+    const tasks = [];
+    const isSun = sunIdx.has(i), isL10 = i >= totalDays - 10;
+    if (isSun) {
+      wk++;
+      const tp = wk % 2 === 0 ? "TYT" : "AYT";
+      tasks.push({i:`📝 Haftalık Deneme (${tp})`, t:"deneme", n:"Tam zamanlı — süreye uy", done:false});
+      tasks.push({i:"📋 Yanlış Analizi", t:"tekrar", n:"Her yanlışın kaynağını bul", done:false});
+    } else {
+      tasks.push({i:rutins[wc%rutins.length].i, t:"rutin", n:rutins[wc%rutins.length].n, done:false});
+      (daySlots[i]||[]).forEach(sl => {
+        tasks.push({i:`${sl.name} (${sl.step}/${sl.total})`, t:"ana",
+          n: sl.step <= Math.ceil(sl.total/2) ? "📖 Konu Anlatım + Temel Test" : "🔥 İleri Soru Çözümü", done:false});
+      });
+      if (isL10) { tasks.push({i:"⚡ Son Tekrar Paketi", t:"deneme", n:"Tüm notlarını gözden geçir", done:false}); }
+      else if (i >= Math.floor(totalDays*0.8) && wc%3===0) {
+        const tk = tekrars[ti%tekrars.length]; ti++;
+        tasks.push({i:tk.i, t:"tekrar", n:tk.n, done:false});
+      }
+      wc++;
+    }
+    plan.push({
+      tarih: d.toLocaleDateString("tr-TR",{day:"numeric",month:"long",weekday:"short"}),
+      tasks, special: isSun||isL10, moral: MORALLER[i%MORALLER.length]
+    });
+  }
+  return plan;
+}
+
+// ─── LOGO ────────────────────────────────────────────────────────────────────
+function Logo({ size }) {
+  const s = size || 46;
+  return (
+    React.createElement('div', { style: {width:s,height:s,borderRadius:s*0.28,background:"linear-gradient(145deg,#3b3fce,#5b47e0)",
+      boxShadow:"0 5px 18px rgba(79,70,229,.4)",display:"flex",alignItems:"center",
+      justifyContent:"center",position:"relative",flexShrink:0},}
+      , React.createElement('div', { style: {position:"absolute",inset:3,borderRadius:s*0.2,border:"1.5px solid rgba(255,255,255,.18)"},})
+      , React.createElement('svg', { width: s*0.6, height: s*0.47, viewBox: "0 0 28 22"   , fill: "none",}
+        , React.createElement('polyline', { points: "4,2 13,11 4,20"  , stroke: "white", strokeWidth: "3.5", strokeLinecap: "round", strokeLinejoin: "round", opacity: "0.55",})
+        , React.createElement('polyline', { points: "14,2 23,11 14,20"  , stroke: "white", strokeWidth: "3.5", strokeLinecap: "round", strokeLinejoin: "round",})
+      )
+    )
+  );
+}
+
+function BotAvatar() {
+  return (
+    React.createElement('div', { style: {width:34,height:34,borderRadius:10,background:"linear-gradient(135deg,#3b3fce,#5b47e0)",
+      display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0},}
+      , React.createElement('svg', { width: "16", height: "12", viewBox: "0 0 28 22"   , fill: "none",}
+        , React.createElement('polyline', { points: "4,2 13,11 4,20"  , stroke: "white", strokeWidth: "3.5", strokeLinecap: "round", strokeLinejoin: "round", opacity: "0.55",})
+        , React.createElement('polyline', { points: "14,2 23,11 14,20"  , stroke: "white", strokeWidth: "3.5", strokeLinecap: "round", strokeLinejoin: "round",})
+      )
+    )
+  );
+}
+
+// ─── MARKDOWN ────────────────────────────────────────────────────────────────
+function renderFrac(num, den) {
+  return (
+    React.createElement('span', { style: {display:"inline-flex",flexDirection:"column",alignItems:"center",
+      verticalAlign:"middle",margin:"0 2px",lineHeight:1.1},}
+      , React.createElement('span', { style: {borderBottom:"1.5px solid #c3c0ff",paddingBottom:1,fontSize:"0.85em"},}, num)
+      , React.createElement('span', { style: {paddingTop:1,fontSize:"0.85em"},}, den)
+    )
+  );
+}
+
+function renderMathExpr(expr) {
+  // Önce iç içe frac'ları çöz
+  var parts = [];
+  var rem = expr.trim();
+
+  // \frac{a}{b} → gerçek kesir
+  var fracReg = /\\frac\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g;
+  var lastI = 0; var fm;
+  var segments2 = [];
+  while ((fm = fracReg.exec(rem)) !== null) {
+    if (fm.index > lastI) segments2.push({type:"text", val: rem.slice(lastI, fm.index)});
+    segments2.push({type:"frac", num: fm[1], den: fm[2]});
+    lastI = fm.index + fm[0].length;
+  }
+  if (lastI < rem.length) segments2.push({type:"text", val: rem.slice(lastI)});
+
+  return segments2.map(function(seg, si) {
+    if (seg.type === "frac") {
+      return React.createElement('span', { key: si,}, renderFrac(cleanSymbols(seg.num), cleanSymbols(seg.den)));
+    }
+    return React.createElement('span', { key: si,}, cleanSymbols(seg.val));
+  });
+}
+
+function cleanSymbols(s) {
+  return s
+    .replace(/\\int\b/g, '∫').replace(/\\iint\b/g, '∬').replace(/\\oint\b/g, '∮')
+    .replace(/\\sum\b/g, 'Σ').replace(/\\prod\b/g, 'Π').replace(/\\lim\b/g, 'lim')
+    .replace(/\\sqrt\{([^}]+)\}/g, '√($1)').replace(/\\sqrt\b/g, '√')
+    .replace(/\\cos\b/g, 'cos').replace(/\\sin\b/g, 'sin').replace(/\\tan\b/g, 'tan')
+    .replace(/\\cot\b/g, 'cot').replace(/\\sec\b/g, 'sec').replace(/\\csc\b/g, 'csc')
+    .replace(/\\log\b/g, 'log').replace(/\\ln\b/g, 'ln').replace(/\\exp\b/g, 'exp')
+    .replace(/\\cdot\b/g, '·').replace(/\\times\b/g, '×').replace(/\\div\b/g, '÷')
+    .replace(/\\pi\b/g, 'π').replace(/\\alpha\b/g, 'α').replace(/\\beta\b/g, 'β')
+    .replace(/\\gamma\b/g, 'γ').replace(/\\delta\b/g, 'δ').replace(/\\Delta\b/g, 'Δ')
+    .replace(/\\theta\b/g, 'θ').replace(/\\lambda\b/g, 'λ').replace(/\\mu\b/g, 'μ')
+    .replace(/\\sigma\b/g, 'σ').replace(/\\Sigma\b/g, 'Σ').replace(/\\omega\b/g, 'ω')
+    .replace(/\\infty\b/g, '∞').replace(/\\circ\b/g, '°').replace(/\\degree\b/g, '°')
+    .replace(/\\leq\b/g, '≤').replace(/\\geq\b/g, '≥').replace(/\\neq\b/g, '≠')
+    .replace(/\\approx\b/g, '≈').replace(/\\pm\b/g, '±').replace(/\\mp\b/g, '∓')
+    .replace(/\\rightarrow\b/g, '→').replace(/\\leftarrow\b/g, '←').replace(/\\Rightarrow\b/g, '⇒')
+    .replace(/\\in\b/g, '∈').replace(/\\notin\b/g, '∉').replace(/\\subset\b/g, '⊂')
+    .replace(/\\cup\b/g, '∪').replace(/\\cap\b/g, '∩').replace(/\\emptyset\b/g, '∅')
+    .replace(/\\widehat\{([^}]*)\}/g, '$1̂').replace(/\\overline\{([^}]*)\}/g, '$1̄')
+    .replace(/\\hat\{([^}]*)\}/g, '$1̂').replace(/\\vec\{([^}]*)\}/g, '$1⃗')
+    .replace(/\^2/g, '²').replace(/\^3/g, '³').replace(/\^{([^}]+)}/g, '^($1)')
+    .replace(/\_\{([^}]+)\}/g, '₍$1₎').replace(/\{|\}/g, '')
+    .replace(/\\\\/g, ' ').replace(/\\,|\\;|\\:/g, ' ').replace(/\\!/g, '')
+    .replace(/\s+/g, ' ').trim();
+}
+
+function renderMath(expr, display) {
+  var content = renderMathExpr(expr);
+  if (display) {
+    return (
+      React.createElement('div', { key: Math.random(), style: {textAlign:"center",margin:"10px 0",padding:"10px 16px",
+        background:"rgba(79,70,229,0.12)",borderRadius:10,
+        color:"#c3c0ff",fontFamily:"Georgia,'Times New Roman',serif",fontSize:15,
+        overflowX:"auto",display:"flex",justifyContent:"center",alignItems:"center",flexWrap:"wrap",gap:2},}
+        , content
+      )
+    );
+  }
+  return (
+    React.createElement('span', { style: {color:"#c3c0ff",fontFamily:"Georgia,'Times New Roman',serif",
+      fontWeight:600,padding:"0 2px",display:"inline-flex",alignItems:"center",flexWrap:"wrap"},}
+      , content
+    )
+  );
+}
+
+function fmtLine(text) {
+  var parts = [];
+  var k = 0;
+
+  // Önce $..$ ve $$...$$ ifadelerini işle
+  var segments = [];
+  var rem = text;
+  var mathReg = /(\$\$[\s\S]+?\$\$|\$[^$\n]+?\$)/g;
+  var lastIdx = 0;
+  var m;
+  while ((m = mathReg.exec(text)) !== null) {
+    if (m.index > lastIdx) segments.push({type:"text", val: text.slice(lastIdx, m.index)});
+    var isDisplay = m[1].startsWith("$$");
+    var expr = isDisplay ? m[1].slice(2,-2) : m[1].slice(1,-1);
+    segments.push({type:"math", val: expr, display: isDisplay});
+    lastIdx = m.index + m[1].length;
+  }
+  if (lastIdx < text.length) segments.push({type:"text", val: text.slice(lastIdx)});
+
+  segments.forEach(function(seg) {
+    if (seg.type === "math") {
+      parts.push(renderMath(seg.val, seg.display));
+      return;
+    }
+    // Normal metin — önce ham LaTeX'i temizle ($ olmadan yazılmış)
+    var cleaned = seg.val
+      // \int_{a}^{b} → ∫ₐᵇ
+      .replace(/\\int_?\{?([^}^]*)\}?\^?\{?([^}]*)\}?/g, function(_, from, to) {
+        return '∫' + (from?'('+from.replace(/[{}]/g,'')+')':'') + (to?'→('+to.replace(/[{}]/g,'')+')'  :'');
+      })
+      .replace(/\\int\b/g, '∫')
+      .replace(/\\left\[/g, '[').replace(/\\right\]/g, ']')
+      .replace(/\\left\(/g, '(').replace(/\\right\)/g, ')')
+      .replace(/\\left\{/g, '{').replace(/\\right\}/g, '}')
+      .replace(/\\left\|/g, '|').replace(/\\right\|/g, '|')
+      .replace(/\\cdot/g, '·').replace(/\\times/g, '×')
+      .replace(/\\leq/g, '≤').replace(/\\geq/g, '≥').replace(/\\neq/g, '≠')
+      .replace(/\\approx/g, '≈').replace(/\\pm/g, '±')
+      .replace(/\\infty/g, '∞').replace(/\\circ/g, '°')
+      .replace(/\\pi/g, 'π').replace(/\\alpha/g, 'α').replace(/\\beta/g, 'β')
+      .replace(/\\theta/g, 'θ').replace(/\\delta/g, 'δ').replace(/\\Delta/g, 'Δ')
+      .replace(/\\sin/g, 'sin').replace(/\\cos/g, 'cos').replace(/\\tan/g, 'tan')
+      .replace(/\\ln/g, 'ln').replace(/\\log/g, 'log')
+      .replace(/\\sqrt\{([^}]+)\}/g, '√($1)').replace(/\\sqrt/g, '√')
+      .replace(/\\_/g, '').replace(/\\\\/g, ' ')
+      .replace(/₍/g, '(').replace(/₎/g, ')'); // alt indis parantezleri
+
+    // Şimdi bold ve code işle
+    var r = cleaned;
+    while (r.length > 0) {
+      var bm = r.match(/\*\*(.*?)\*\*/);
+      var cm = r.match(/`(.*?)`/);
+      var candidates = [bm, cm].filter(Boolean);
+      if (candidates.length === 0) { parts.push(React.createElement('span', { key: k++,}, r)); break; }
+      var first = candidates.sort(function(a,b){ return a.index-b.index; })[0];
+      if (first.index > 0) parts.push(React.createElement('span', { key: k++,}, r.slice(0, first.index)));
+      if (first === bm) parts.push(React.createElement('strong', { key: k++, style: {fontWeight:800},}, first[1]));
+      else parts.push(React.createElement('code', { key: k++, style: {background:"rgba(79,70,229,0.2)",padding:"1px 5px",borderRadius:3,fontSize:12,fontFamily:"monospace",color:"#c3c0ff"},}, first[1]));
+      r = r.slice(first.index + first[0].length);
+    }
+  });
+  return parts;
+}
+
+function Md({ text }) {
+  // $$...$$ bloklarını önceden ayır
+  var blocks = [];
+  var rem = (text||"");
+  var dblReg = /\$\$([\s\S]+?)\$\$/g;
+  var last = 0; var dm;
+  while ((dm = dblReg.exec(rem)) !== null) {
+    if (dm.index > last) blocks.push({type:"text", val: rem.slice(last, dm.index)});
+    blocks.push({type:"dmath", val: dm[1]});
+    last = dm.index + dm[0].length;
+  }
+  if (last < rem.length) blocks.push({type:"text", val: rem.slice(last)});
+
+  var elems = [];
+  var ki = 0;
+  blocks.forEach(function(block) {
+    if (block.type === "dmath") {
+      elems.push(renderMath(block.val, true));
+      return;
+    }
+    var lines = block.val.split("\n");
+    lines.forEach(function(line, i) {
+      if (!line.trim()) { elems.push(React.createElement('div', { key: ki++, style: {height:5},})); return; }
+      if (line.startsWith("### ")) { elems.push(React.createElement('div', { key: ki++, style: {fontWeight:800,fontSize:13,margin:"6px 0 2px",color:"#c3c0ff"},}, fmtLine(line.slice(4)))); return; }
+      if (line.startsWith("## ")) { elems.push(React.createElement('div', { key: ki++, style: {fontWeight:900,fontSize:15,margin:"8px 0 2px",color:"#dae2fd"},}, fmtLine(line.slice(3)))); return; }
+      if (line.startsWith("# ")) { elems.push(React.createElement('div', { key: ki++, style: {fontWeight:900,fontSize:16,margin:"8px 0 2px",color:"#dae2fd"},}, fmtLine(line.slice(2)))); return; }
+      var lm = line.match(/^[-*]\s(.+)/);
+      if (lm) { elems.push(React.createElement('div', { key: ki++, style: {display:"flex",gap:8,margin:"2px 0"},}, React.createElement('span', { style: {color:"#818cf8",fontWeight:900,flexShrink:0},}, "•"), React.createElement('span', null, fmtLine(lm[1])))); return; }
+      var nm = line.match(/^(\d+)\.\s(.+)/);
+      if (nm) { elems.push(React.createElement('div', { key: ki++, style: {display:"flex",gap:8,margin:"2px 0"},}, React.createElement('span', { style: {color:"#818cf8",fontWeight:700,minWidth:18,flexShrink:0},}, nm[1], "."), React.createElement('span', null, fmtLine(nm[2])))); return; }
+      elems.push(React.createElement('div', { key: ki++, style: {lineHeight:1.75},}, fmtLine(line)));
+    });
+  });
+  return React.createElement('div', { style: {lineHeight:1.75},}, elems);
+}
+
+
+// ─── SPLASH SCREEN ───────────────────────────────────────────────────────────
+function SplashScreen({ onDone }) {
+  var [phase, setPhase] = useState(0);
+  useEffect(function() {
+    var t1 = setTimeout(function(){ setPhase(1); }, 300);
+    var t2 = setTimeout(function(){ setPhase(2); }, 900);
+    var t3 = setTimeout(function(){ setPhase(3); }, 2000);
+    var t4 = setTimeout(function(){ setPhase(4); }, 2800);
+    var t5 = setTimeout(function(){ onDone(); }, 3300);
+    return function(){ clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5); };
+  }, []);
+  return (
+    React.createElement('div', { style: {position:"fixed",inset:0,
+      background:"linear-gradient(160deg,#050e1a,#0a1628,#0f2040)",
+      display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+      opacity: phase >= 4 ? 0 : 1, transition:"opacity 0.5s ease", zIndex:9999},}
+
+      /* Arka plan parıltı */
+      , React.createElement('div', { style: {position:"absolute",width:300,height:300,borderRadius:"50%",
+        background:"radial-gradient(circle,rgba(0,212,200,.15) 0%,transparent 70%)",
+        top:"50%",left:"50%",transform:"translate(-50%,-60%)",
+        opacity: phase >= 1 ? 1 : 0, transition:"opacity 1s ease"},})
+
+      /* Logo */
+      , React.createElement('div', { style: {
+        transform: phase >= 1 ? "scale(1) translateY(0)" : "scale(0.3) translateY(50px)",
+        opacity: phase >= 1 ? 1 : 0,
+        transition:"all 0.7s cubic-bezier(0.34,1.56,0.64,1)",
+        marginBottom:24},}
+        , React.createElement(Logo, { size: 110,})
+      )
+
+      /* İsim */
+      , React.createElement('div', { style: {
+        opacity: phase >= 2 ? 1 : 0,
+        transform: phase >= 2 ? "translateY(0)" : "translateY(20px)",
+        transition:"all 0.5s ease",
+        textAlign:"center", marginBottom:8},}
+        , React.createElement('div', { style: {fontSize:36,fontWeight:900,letterSpacing:"-.03em",color:"#fff"},}, "Pruva"
+          , React.createElement('span', { style: {color:"#00d4c8"},}, "YKS")
+        )
+        , React.createElement('div', { style: {fontSize:12,color:"rgba(255,255,255,.4)",letterSpacing:".2em",marginTop:4},}, "TECHNO⁺"
+
+        )
+      )
+
+      /* Tagline */
+      , React.createElement('div', { style: {
+        opacity: phase >= 3 ? 1 : 0,
+        transform: phase >= 3 ? "translateY(0)" : "translateY(10px)",
+        transition:"all 0.4s ease",
+        fontSize:13,color:"rgba(255,255,255,.5)",marginBottom:48},}, "YKS hazırlığında akıllı rehberin"
+
+      )
+
+      /* Dots */
+      , React.createElement('div', { style: {position:"absolute",bottom:60,
+        opacity: phase >= 2 ? 1 : 0, transition:"opacity 0.5s ease 0.3s",
+        display:"flex",gap:8},}
+        , [0,1,2].map(function(i){
+          return React.createElement('div', { key: i, style: {width:7,height:7,borderRadius:"50%",background:"#00d4c8",
+            animation:"pulse 1.2s ease-in-out "+(i*0.2)+"s infinite"},});
+        })
+      )
+      , React.createElement('style', null, `@keyframes pulse{0%,100%{opacity:0.3;transform:scale(0.8)}50%{opacity:1;transform:scale(1.2)}}`)
+    )
+  );
+}
+
+// ─── LANDING PAGE ────────────────────────────────────────────────────────────
+function LandingPage({ onStart, onLogin }) {
+  return (
+    React.createElement('div', { style: {minHeight:"100dvh",background:"#0b1326",color:"#dae2fd",
+      fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
+      overflowY:"scroll",overflowX:"hidden",position:"relative",
+      WebkitOverflowScrolling:"touch",height:"100dvh"},}
+
+      /* Arka plan dekorasyonları */
+      , React.createElement('div', { style: {position:"fixed",inset:0,overflow:"hidden",pointerEvents:"none",zIndex:0},}
+        , React.createElement('div', { style: {position:"absolute",top:"-10%",left:"-10%",width:"40%",height:"40%",
+          borderRadius:"50%",background:"rgba(79,70,229,0.2)",filter:"blur(120px)"},})
+        , React.createElement('div', { style: {position:"absolute",top:"20%",right:"-5%",width:"30%",height:"30%",
+          borderRadius:"50%",background:"rgba(96,1,209,0.1)",filter:"blur(100px)"},})
+        , React.createElement('div', { style: {position:"absolute",bottom:"-5%",left:"20%",width:"50%",height:"40%",
+          borderRadius:"50%",background:"rgba(0,108,102,0.1)",filter:"blur(120px)"},})
+        , React.createElement('div', { style: {position:"absolute",inset:0,background:"radial-gradient(circle at center, rgba(79,70,229,0.15) 0%, transparent 70%)"},})
+      )
+
+      , React.createElement('main', { style: {position:"relative",zIndex:1,display:"flex",flexDirection:"column",
+        alignItems:"center",justifyContent:"flex-start",padding:"48px 24px 80px",minHeight:"100dvh"},}
+
+        /* Logo */
+        , React.createElement('div', { style: {position:"relative",marginBottom:48,animation:"float 6s ease-in-out infinite"},}
+          , React.createElement('div', { style: {position:"absolute",inset:0,background:"linear-gradient(to top right,#4f46e5,#24ddd1)",
+            borderRadius:"50%",filter:"blur(40px)",opacity:0.4,transform:"scale(1.25)"},})
+          , React.createElement('div', { style: {position:"relative",background:"#222a3d",padding:32,borderRadius:48,
+            boxShadow:"0 25px 50px rgba(6,14,32,0.5)",border:"1px solid rgba(70,69,85,0.1)"},}
+            , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:12},}
+              , React.createElement(Logo, { size: 56,})
+              , React.createElement('h1', { style: {fontFamily:"Manrope,sans-serif",fontWeight:800,fontSize:36,
+                letterSpacing:"-0.05em",color:"#dae2fd",margin:0},}, "PruvaYKS")
+            )
+          )
+        )
+
+        /* Başlık */
+        , React.createElement('div', { style: {maxWidth:600,textAlign:"center",marginBottom:48},}
+          , React.createElement('h2', { style: {fontFamily:"Manrope,sans-serif",fontSize:"clamp(28px,6vw,48px)",
+            fontWeight:800,letterSpacing:"-0.025em",lineHeight:1.1,marginBottom:20,color:"#dae2fd"},}, "Zirveye Giden Yolun"
+              , " "
+            , React.createElement('span', { style: {background:"linear-gradient(to right,#c3c0ff,#24ddd1,#d2bbff)",
+              WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"},}, "Akıllı Rehberi"
+
+            )
+          )
+          , React.createElement('p', { style: {color:"#c7c4d8",fontSize:16,lineHeight:1.6,maxWidth:480,margin:"0 auto",fontWeight:500},}, "Yapay zeka destekli çalışma programları, gerçek zamanlı performans analizi ve sana özel mentorluk ile sınav maratonunda fark yarat."
+
+          )
+        )
+
+        /* Butonlar */
+        , React.createElement('div', { style: {width:"100%",maxWidth:400,display:"flex",flexDirection:"column",gap:16,marginBottom:64},}
+          /* Ana buton */
+          , React.createElement('div', { style: {background:"linear-gradient(to right,#4f46e5,#6001d1)",padding:2,borderRadius:32,
+            boxShadow:"0 20px 25px rgba(79,70,229,0.2)"},}
+            , React.createElement('button', { onClick: onStart,
+              style: {width:"100%",background:"rgba(79,70,229,0.8)",backdropFilter:"blur(12px)",
+                borderRadius:30,padding:"20px",border:"none",cursor:"pointer",
+                display:"flex",alignItems:"center",justifyContent:"center",gap:12,
+                transition:"all 0.3s"},}
+              , React.createElement('span', { style: {color:"#fff",fontFamily:"Manrope,sans-serif",fontWeight:700,
+                fontSize:16,letterSpacing:"0.05em",textTransform:"uppercase"},}, "Hemen Başla" )
+              , React.createElement('span', { style: {color:"#fff",fontSize:20},}, "→")
+            )
+          )
+          /* Giriş linki */
+          , React.createElement('div', { style: {display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"16px 0"},}
+            , React.createElement('span', { style: {color:"#c7c4d8",fontWeight:500},}, "Zaten üye misin?"  )
+            , React.createElement('button', { onClick: onLogin,
+              style: {color:"#24ddd1",fontWeight:700,background:"none",border:"none",cursor:"pointer",
+                fontSize:14,textDecoration:"underline",textUnderlineOffset:4},}, "Giriş Yap"
+
+            )
+          )
+        )
+
+        /* Feature kartları */
+        , React.createElement('div', { style: {width:"100%",maxWidth:900,display:"grid",
+          gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:24,marginBottom:64,opacity:0.85},}
+          , React.createElement('div', { style: {background:"rgba(19,27,46,0.6)",backdropFilter:"blur(24px)",
+            padding:32,borderRadius:32,border:"1px solid rgba(70,69,85,0.1)"},}
+            , React.createElement('div', { style: {width:48,height:48,borderRadius:"50%",background:"rgba(79,70,229,0.2)",
+              display:"flex",alignItems:"center",justifyContent:"center",marginBottom:16,fontSize:24},}, "✨"
+
+            )
+            , React.createElement('h3', { style: {fontFamily:"Manrope,sans-serif",fontWeight:700,fontSize:18,
+              color:"#dae2fd",marginBottom:8},}, "Yapay Zeka Planlama"  )
+            , React.createElement('p', { style: {color:"#c7c4d8",fontSize:13,lineHeight:1.6},}, "Eksiklerini analiz eden ve her gün seni hedefine bir adım daha yaklaştıran dinamik çalışma takvimi."
+
+            )
+          )
+          , React.createElement('div', { style: {background:"rgba(19,27,46,0.6)",backdropFilter:"blur(24px)",
+            padding:32,borderRadius:32,border:"1px solid rgba(70,69,85,0.1)"},}
+            , React.createElement('div', { style: {width:48,height:48,borderRadius:"50%",background:"rgba(0,108,102,0.2)",
+              display:"flex",alignItems:"center",justifyContent:"center",marginBottom:16,fontSize:24},}, "📊"
+
+            )
+            , React.createElement('h3', { style: {fontFamily:"Manrope,sans-serif",fontWeight:700,fontSize:18,
+              color:"#dae2fd",marginBottom:8},}, "Gerçek Zamanlı Analiz"  )
+            , React.createElement('p', { style: {color:"#c7c4d8",fontSize:13,lineHeight:1.6},}, "Netlerini takip et, başarı oranını gör ve rakiplerinin önünde kal."
+
+            )
+          )
+          , React.createElement('div', { style: {background:"rgba(19,27,46,0.6)",backdropFilter:"blur(24px)",
+            padding:32,borderRadius:32,border:"1px solid rgba(70,69,85,0.1)"},}
+            , React.createElement('div', { style: {width:48,height:48,borderRadius:"50%",background:"rgba(96,1,209,0.2)",
+              display:"flex",alignItems:"center",justifyContent:"center",marginBottom:16,fontSize:24},}, "🤖"
+
+            )
+            , React.createElement('h3', { style: {fontFamily:"Manrope,sans-serif",fontWeight:700,fontSize:18,
+              color:"#dae2fd",marginBottom:8},}, "Tech AI Mentör"  )
+            , React.createElement('p', { style: {color:"#c7c4d8",fontSize:13,lineHeight:1.6},}, "Soru sor, program değiştir, motivasyon al — 7/24 yanında olan akıllı asistan."
+
+            )
+          )
+        )
+
+        /* Footer */
+        , React.createElement('footer', { style: {textAlign:"center"},}
+          , React.createElement('p', { style: {color:"#918fa1",fontSize:11,textTransform:"uppercase",
+            letterSpacing:"0.2em",fontWeight:600,marginBottom:16},}, "Başarıya Ulaşan Binlerce Öğrencinin Tercihi"
+
+          )
+          , React.createElement('div', { style: {display:"flex",alignItems:"center",justifyContent:"center",gap:8,
+            opacity:0.5,fontSize:18,fontWeight:700},}
+            , React.createElement('span', null, "Techno⁺")
+          )
+        )
+      )
+      , React.createElement('style', null, `@keyframes float{0%{transform:translateY(0)}50%{transform:translateY(-10px)}100%{transform:translateY(0)}}`)
+    )
+  );
+}
+
+// ─── AUTH EKRANI ─────────────────────────────────────────────────────────────
+function AuthScreen({ onAuth, initialMode }) {
+  var [mode, setMode] = useState(initialMode || "landing");
+  var [email, setEmail] = useState("");
+  var [pass, setPass] = useState("");
+  var [passConfirm, setPassConfirm] = useState("");
+  var [name, setName] = useState("");
+  var [showPass, setShowPass] = useState(false);
+  var [err, setErr] = useState("");
+  var [loading, setLoading] = useState(false);
+  var [resetSent, setResetSent] = useState(false);
+  var [focusPass, setFocusPass] = useState(false);
+
+  var FB_API_KEY = "AIzaSyCAu4Pj7gXF5VWV_ns_28zOCwsoTiuzLFM";
+
+  if (mode === "landing") {
+    return React.createElement(LandingPage, {
+      onStart: function(){ setMode("register"); },
+      onLogin: function(){ setMode("login"); },}
+    );
+  }
+
+  function handleSubmit() {
+    if (!email || !pass) { setErr("Email ve şifre gerekli"); return; }
+    if (mode === "register") {
+      if (!name) { setErr("Ad gerekli"); return; }
+      if (pass.length < 6) { setErr("Şifre en az 6 karakter olmalı"); return; }
+      if (pass !== passConfirm) { setErr("Şifreler eşleşmiyor"); return; }
+    }
+    setLoading(true); setErr("");
+
+    var url = mode === "login"
+      ? "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=" + FB_API_KEY
+      : "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=" + FB_API_KEY;
+
+    fetch(url, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({email: email, password: pass, returnSecureToken: true})
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+      if (data.error) {
+        var msg = data.error.message;
+        if (msg === "EMAIL_NOT_FOUND" || msg === "INVALID_PASSWORD" || msg === "INVALID_LOGIN_CREDENTIALS") msg = "Email veya şifre yanlış";
+        else if (msg === "EMAIL_EXISTS") msg = "Bu email zaten kayıtlı";
+        else if (msg.includes("WEAK_PASSWORD")) msg = "Şifre en az 6 karakter olmalı";
+        setErr(msg); setLoading(false); return;
+      }
+      var uid = data.localId;
+      var idToken = data.idToken;
+      lsSet("pyk_fb_uid", uid);
+      lsSet("pyk_fb_token", idToken);
+      lsSet("pyk_fb_refresh", data.refreshToken);
+      lsSet("pyk_fb_email", email);
+      if (mode === "register") {
+        fetch("https://firestore.googleapis.com/v1/projects/pruvayks/databases/(default)/documents/users/" + uid, {
+          method: "PATCH",
+          headers: {"Content-Type": "application/json", "Authorization": "Bearer " + idToken},
+          body: JSON.stringify({fields: {name: {stringValue: name}, email: {stringValue: email}}})
+        }).catch(function(){});
+      }
+      onAuth({uid: uid, email: email, idToken: idToken, name: name || ""});
+    })
+    .catch(function(e){ setErr("Bağlantı hatası: " + e.message); setLoading(false); });
+  }
+
+  function handleReset() {
+    if (!email) { setErr("Önce email adresini gir"); return; }
+    setLoading(true);
+    fetch("https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=" + FB_API_KEY, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({requestType: "PASSWORD_RESET", email: email})
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+      if (data.error) { setErr("Email bulunamadı"); }
+      else { setResetSent(true); setErr(""); }
+      setLoading(false);
+    })
+    .catch(function(){ setErr("Hata oluştu"); setLoading(false); });
+  }
+
+  return (
+    React.createElement('div', { style: {minHeight:"100dvh",background:"#0b1326",
+      display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+      padding:"24px",fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
+      overflowY:"auto",position:"relative"},}
+
+      /* Arka plan */
+      , React.createElement('div', { style: {position:"fixed",inset:0,overflow:"hidden",pointerEvents:"none"},}
+        , React.createElement('div', { style: {position:"absolute",top:"-10%",left:"-10%",width:"40%",height:"40%",
+          borderRadius:"50%",background:"rgba(79,70,229,0.2)",filter:"blur(120px)"},})
+        , React.createElement('div', { style: {position:"absolute",bottom:"0",right:"0",width:"30%",height:"30%",
+          borderRadius:"50%",background:"rgba(0,108,102,0.1)",filter:"blur(100px)"},})
+      )
+
+      , React.createElement('div', { style: {width:"100%",maxWidth:400,position:"relative",zIndex:10},}
+        /* Geri butonu */
+        , React.createElement('button', { onClick: function(){ setMode("landing"); setErr(""); setResetSent(false); },
+          style: {background:"none",border:"none",cursor:"pointer",color:"#c7c4d8",
+            fontSize:13,marginBottom:20,padding:0,display:"flex",alignItems:"center",gap:6},}, "← Geri"
+
+        )
+
+        /* Logo ve başlık */
+        , React.createElement('div', { style: {textAlign:"center",marginBottom:28},}
+          , React.createElement('div', { style: {display:"flex",justifyContent:"center",marginBottom:10},}, React.createElement(Logo, { size: 52,}))
+          , React.createElement('div', { style: {fontFamily:"Manrope,sans-serif",fontSize:24,fontWeight:800,color:"#dae2fd"},}, "Pruva"
+            , React.createElement('span', { style: {color:"#24ddd1"},}, "YKS")
+          )
+          , React.createElement('div', { style: {fontSize:12,color:"rgba(218,226,253,.4)",marginTop:3},}
+            , mode === "login" ? "Hesabına giriş yap" : "Yeni hesap oluştur"
+          )
+        )
+
+        /* Tab */
+        , React.createElement('div', { style: {display:"flex",background:"rgba(255,255,255,.07)",borderRadius:14,padding:4,marginBottom:20},}
+          , ["login","register"].map(function(m){
+            return (
+              React.createElement('button', { key: m, onClick: function(){ setMode(m); setErr(""); setResetSent(false); },
+                style: {flex:1,padding:"10px",borderRadius:10,border:"none",cursor:"pointer",fontSize:13,fontWeight:700,
+                  background: mode===m ? "linear-gradient(135deg,#4f46e5,#6001d1)" : "transparent",
+                  color: mode===m ? "#fff" : "rgba(218,226,253,.6)",transition:"all .2s"},}
+                , m==="login" ? "Giriş Yap" : "Kayıt Ol"
+              )
+            );
+          })
+        )
+
+        , resetSent ? (
+          React.createElement('div', { style: {textAlign:"center",padding:"20px 0"},}
+            , React.createElement('div', { style: {fontSize:40,marginBottom:12},}, "📧")
+            , React.createElement('div', { style: {color:"#24ddd1",fontWeight:700,fontSize:15,marginBottom:8},}, "Email gönderildi!" )
+            , React.createElement('div', { style: {color:"rgba(218,226,253,.5)",fontSize:12,marginBottom:20},}, email, " adresini kontrol et"   )
+            , React.createElement('button', { onClick: function(){ setResetSent(false); },
+              style: {background:"rgba(255,255,255,.1)",border:"none",borderRadius:12,padding:"10px 20px",
+                color:"#dae2fd",fontSize:13,cursor:"pointer"},}, "← Geri Dön"  )
+          )
+        ) : (
+          React.createElement(React.Fragment, null
+            , mode === "register" && (
+              React.createElement('input', { value: name, onChange: function(e){setName(e.target.value);},
+                placeholder: "Adın", autoComplete: "name",
+                style: {width:"100%",padding:"13px 16px",borderRadius:14,
+                  border:"1px solid rgba(70,69,85,0.3)",
+                  background:"rgba(19,27,46,0.6)",color:"#dae2fd",fontSize:14,outline:"none",marginBottom:10,
+                  fontFamily:"inherit"},})
+            )
+
+            , React.createElement('input', { value: email, onChange: function(e){setEmail(e.target.value);},
+              placeholder: "Email", type: "email", autoComplete: "email",
+              style: {width:"100%",padding:"13px 16px",borderRadius:14,
+                border:"1px solid rgba(70,69,85,0.3)",
+                background:"rgba(19,27,46,0.6)",color:"#dae2fd",fontSize:14,outline:"none",marginBottom:10,
+                fontFamily:"inherit"},})
+
+            , React.createElement('div', { style: {position:"relative",marginBottom:10},}
+              , React.createElement('input', { value: pass, onChange: function(e){setPass(e.target.value);},
+                onFocus: function(){ setFocusPass(true); },
+                onBlur: function(){ setFocusPass(false); },
+                onKeyDown: function(e){if(e.key==="Enter"&&mode==="login")handleSubmit();},
+                placeholder: "Şifre", type: showPass ? "text" : "password",
+                autoComplete: mode==="login" ? "current-password" : "new-password",
+                style: {width:"100%",padding:"13px 50px 13px 16px",borderRadius:14,
+                  border:"1px solid rgba(70,69,85,0.3)",
+                  background:"rgba(19,27,46,0.6)",color:"#dae2fd",fontSize:14,outline:"none",
+                  fontFamily:"inherit"},})
+              , React.createElement('button', { onClick: function(){ setShowPass(!showPass); },
+                style: {position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",
+                  background:"none",border:"none",cursor:"pointer",color:"rgba(218,226,253,.5)",fontSize:16,padding:4},}
+                , showPass ? "👁" : "🙈"
+              )
+            )
+
+            , mode === "register" && (
+              React.createElement('div', { style: {position:"relative",marginBottom:10},}
+                , React.createElement('input', { value: passConfirm, onChange: function(e){setPassConfirm(e.target.value);},
+                  placeholder: "Şifreyi onayla" , type: showPass ? "text" : "password",
+                  autoComplete: "new-password",
+                  style: {width:"100%",padding:"13px 16px",borderRadius:14,
+                    border:"1px solid "+(passConfirm && pass !== passConfirm ? "#ef4444" : passConfirm && pass === passConfirm ? "#24ddd1" : "rgba(70,69,85,0.3)"),
+                    background:"rgba(19,27,46,0.6)",color:"#dae2fd",fontSize:14,outline:"none",
+                    fontFamily:"inherit"},})
+                , passConfirm && (
+                  React.createElement('span', { style: {position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",fontSize:16},}
+                    , pass === passConfirm ? "✅" : "❌"
+                  )
+                )
+              )
+            )
+
+            , err && React.createElement('div', { style: {color:"#ffb4ab",fontSize:12,marginBottom:10,textAlign:"center"},}, err)
+
+            /* Ana buton */
+            , React.createElement('div', { style: {background:"linear-gradient(to right,#4f46e5,#6001d1)",padding:2,
+              borderRadius:32,boxShadow:"0 20px 25px rgba(79,70,229,0.2)",marginBottom:12},}
+              , React.createElement('button', { onClick: handleSubmit, disabled: loading,
+                style: {width:"100%",background:"rgba(79,70,229,0.85)",backdropFilter:"blur(12px)",
+                  borderRadius:30,padding:"16px",border:"none",cursor:"pointer",
+                  color:"#fff",fontFamily:"Manrope,sans-serif",fontWeight:700,fontSize:15,
+                  letterSpacing:"0.03em",opacity:loading?0.7:1,transition:"all 0.3s"},}
+                , loading ? "⏳ Lütfen bekle..." : mode==="login" ? "Giriş Yap →" : "Hesap Oluştur →"
+              )
+            )
+
+            , mode === "login" && (
+              React.createElement('button', { onClick: handleReset, disabled: loading,
+                style: {width:"100%",background:"none",border:"none",cursor:"pointer",
+                  color:"rgba(218,226,253,.4)",fontSize:12,padding:"8px",textDecoration:"underline",
+                  textUnderlineOffset:4},}, "Şifremi unuttum"
+
+              )
+            )
+          )
+        )
+      )
+      , React.createElement('style', null, `@keyframes charPop{0%{transform:scale(0) translateY(20px);opacity:0}100%{transform:scale(1) translateY(0);opacity:1}}`)
+    )
+  );
+}
+
+// ─── AUTH KARAKTERİ ──────────────────────────────────────────────────────────
+function AuthChar({ showPass }) {
+  return (
+    React.createElement('svg', { width: "80", height: "80", viewBox: "0 0 80 80"   , fill: "none", xmlns: "http://www.w3.org/2000/svg",}
+      , React.createElement('circle', { cx: "40", cy: "40", r: "36", fill: "#0f2040", stroke: "#00d4c8", strokeWidth: "2.5",})
+      , React.createElement('circle', { cx: "10", cy: "38", r: "6", fill: "#0f2040", stroke: "#00d4c8", strokeWidth: "2",})
+      , React.createElement('circle', { cx: "70", cy: "38", r: "6", fill: "#0f2040", stroke: "#00d4c8", strokeWidth: "2",})
+      , React.createElement('line', { x1: "40", y1: "4", x2: "40", y2: "14", stroke: "#00d4c8", strokeWidth: "2", strokeLinecap: "round",})
+      , React.createElement('circle', { cx: "40", cy: "3", r: "3", fill: "#00d4c8",})
+      , showPass ? (
+        React.createElement(React.Fragment, null
+          , React.createElement('ellipse', { cx: "28", cy: "38", rx: "7", ry: "7", fill: "#fff",})
+          , React.createElement('circle', { cx: "28", cy: "38", r: "4", fill: "#00d4c8",})
+          , React.createElement('circle', { cx: "29.5", cy: "36.5", r: "1.5", fill: "#fff",})
+          , React.createElement('ellipse', { cx: "52", cy: "38", rx: "7", ry: "7", fill: "#fff",})
+          , React.createElement('circle', { cx: "52", cy: "38", r: "4", fill: "#00d4c8",})
+          , React.createElement('circle', { cx: "53.5", cy: "36.5", r: "1.5", fill: "#fff",})
+          , React.createElement('path', { d: "M22 29 Q28 26 34 29"     , stroke: "#00d4c8", strokeWidth: "2", strokeLinecap: "round", fill: "none",})
+          , React.createElement('path', { d: "M46 29 Q52 26 58 29"     , stroke: "#00d4c8", strokeWidth: "2", strokeLinecap: "round", fill: "none",})
+        )
+      ) : (
+        React.createElement(React.Fragment, null
+          , React.createElement('ellipse', { cx: "24", cy: "40", rx: "10", ry: "8", fill: "#0a1e3d", stroke: "#00d4c8", strokeWidth: "2",})
+          , React.createElement('ellipse', { cx: "56", cy: "40", rx: "10", ry: "8", fill: "#0a1e3d", stroke: "#00d4c8", strokeWidth: "2",})
+          , React.createElement('line', { x1: "18", y1: "35", x2: "16", y2: "30", stroke: "#00d4c8", strokeWidth: "1.5", strokeLinecap: "round",})
+          , React.createElement('line', { x1: "22", y1: "33", x2: "21", y2: "28", stroke: "#00d4c8", strokeWidth: "1.5", strokeLinecap: "round",})
+          , React.createElement('line', { x1: "26", y1: "33", x2: "26", y2: "28", stroke: "#00d4c8", strokeWidth: "1.5", strokeLinecap: "round",})
+          , React.createElement('line', { x1: "30", y1: "34", x2: "31", y2: "29", stroke: "#00d4c8", strokeWidth: "1.5", strokeLinecap: "round",})
+          , React.createElement('line', { x1: "50", y1: "34", x2: "49", y2: "29", stroke: "#00d4c8", strokeWidth: "1.5", strokeLinecap: "round",})
+          , React.createElement('line', { x1: "54", y1: "33", x2: "54", y2: "28", stroke: "#00d4c8", strokeWidth: "1.5", strokeLinecap: "round",})
+          , React.createElement('line', { x1: "58", y1: "33", x2: "59", y2: "28", stroke: "#00d4c8", strokeWidth: "1.5", strokeLinecap: "round",})
+          , React.createElement('line', { x1: "62", y1: "35", x2: "64", y2: "30", stroke: "#00d4c8", strokeWidth: "1.5", strokeLinecap: "round",})
+          , React.createElement('path', { d: "M18 39 Q24 42 30 39"     , stroke: "#00d4c8", strokeWidth: "1.5", strokeLinecap: "round", fill: "none",})
+          , React.createElement('path', { d: "M50 39 Q56 42 62 39"     , stroke: "#00d4c8", strokeWidth: "1.5", strokeLinecap: "round", fill: "none",})
+        )
+      )
+      , React.createElement('path', { d: showPass ? "M30 54 Q40 61 50 54" : "M32 55 Q40 59 48 55",
+        stroke: "#00d4c8", strokeWidth: "2.5", strokeLinecap: "round", fill: "none",})
+    )
+  );
+}
+
+// ─── ANA UYGULAMA ─────────────────────────────────────────────────────────────
+var TC = {rutin:{bg:"#f0fdf4",bd:"#4ade80"},ana:{bg:"#eef2ff",bd:"#818cf8"},deneme:{bg:"#fffbeb",bd:"#fbbf24"},tekrar:{bg:"#faf5ff",bd:"#c084fc"}};
+
+var HEDEFLER = [
+  {id:"tyt_high",l:"📚 TYT 110+ Net",desc:"Güçlü bir TYT puanı hedefliyorum"},
+  {id:"tyt_mid",l:"📖 TYT 90-110 Net",desc:"Orta-üst düzey TYT hedefi"},
+  {id:"ayt_say",l:"🔬 AYT Sayısal 60+ Net",desc:"Mühendislik / tıp gibi sayısal bölümler"},
+  {id:"ayt_ea",l:"📐 AYT Eşit Ağırlık 60+ Net",desc:"Hukuk / iktisat gibi EA bölümler"},
+  {id:"ayt_soz",l:"📜 AYT Sözel 60+ Net",desc:"Edebiyat / tarih gibi sözel bölümler"},
+  {id:"custom",l:"✏️ Kendi Hedefim",desc:"Kendim belirleyeceğim"},
+];
+
+// ─── ADMOB ───────────────────────────────────────────────────────────────────
+var ADMOB_BANNER_ID = "ca-app-pub-6403801200273008/2196286054";
+
+function useAdMob() {
+  // AdMob native olarak MainActivity.java üzerinden yönetiliyor
+  // Bu hook gelecekte kullanım için boş bırakıldı
+}
+
+function PruvaYKS() {
+  var [splash, setSplash] = useState(true);
+  var [fbUser, setFbUser] = useState(null);
+  var [authReady, setAuthReady] = useState(false);
+
+  // localStorage'dan token kontrol et
+  useEffect(function() {
+    var uid = lsGet("pyk_fb_uid");
+    var token = lsGet("pyk_fb_token");
+    var refreshToken = lsGet("pyk_fb_refresh");
+    if (uid && token) {
+      // Önce refresh token ile yeni token al
+      var doRefresh = function(rt) {
+        if (!rt) { setAuthReady(true); return; }
+        fetch("https://securetoken.googleapis.com/v1/token?key=AIzaSyCAu4Pj7gXF5VWV_ns_28zOCwsoTiuzLFM", {
+          method: "POST",
+          headers: {"Content-Type": "application/x-www-form-urlencoded"},
+          body: "grant_type=refresh_token&refresh_token=" + rt
+        })
+        .then(function(r){ return r.json(); })
+        .then(function(data) {
+          if (data.id_token) {
+            lsSet("pyk_fb_token", data.id_token);
+            lsSet("pyk_fb_refresh", data.refresh_token);
+            setFbUser({uid: uid, email: lsGet("pyk_fb_email")||"", idToken: data.id_token});
+          }
+          setAuthReady(true);
+        })
+        .catch(function(){ setAuthReady(true); });
+      };
+      doRefresh(refreshToken);
+    } else {
+      setAuthReady(true);
+    }
+  }, []);
+
+  if (splash) return React.createElement(SplashScreen, { onDone: function(){ setSplash(false); },});
+  if (!authReady) return React.createElement('div', { style: {background:"#0a1628",height:"100dvh"},});
+  if (!fbUser) return React.createElement(AuthScreen, { onAuth: function(u){ setFbUser(u); },});
+
+  return React.createElement(PruvaYKSApp, { fbUser: fbUser, onSignOut: function(){ setFbUser(null); lsSet("pyk_fb_uid",null); lsSet("pyk_fb_token",null); },});
+}
+
+function PruvaYKSApp({ fbUser, onSignOut }) {
+  useAdMob();
+  var [prog, setProg] = useState(null);
+  var [dens, setDens] = useState([]);
+  var [user, setUser] = useState(null);
+  var [dataLoaded, setDataLoaded] = useState(false);
+
+  var FS_URL = "https://firestore.googleapis.com/v1/projects/pruvayks/databases/(default)/documents/users/" + fbUser.uid;
+
+  function fsToJs(fields) {
+    if (!fields) return {};
+    var out = {};
+    Object.keys(fields).forEach(function(k) {
+      var v = fields[k];
+      if (v.stringValue !== undefined) out[k] = v.stringValue;
+      else if (v.booleanValue !== undefined) out[k] = v.booleanValue;
+      else if (v.integerValue !== undefined) out[k] = parseInt(v.integerValue);
+      else if (v.nullValue !== undefined) out[k] = null;
+      else if (v.mapValue) out[k] = fsToJs(v.mapValue.fields);
+      else if (v.arrayValue) out[k] = (v.arrayValue.values||[]).map(function(i){ return fsToJs({v:i}).v; });
+    });
+    return out;
+  }
+
+  function jsToFs(obj) {
+    if (obj === null || obj === undefined) return {nullValue: null};
+    if (typeof obj === "string") return {stringValue: obj};
+    if (typeof obj === "boolean") return {booleanValue: obj};
+    if (typeof obj === "number") return Number.isInteger(obj) ? {integerValue: String(obj)} : {doubleValue: obj};
+    if (Array.isArray(obj)) return {arrayValue: {values: obj.map(jsToFs)}};
+    if (typeof obj === "object") {
+      var fields = {};
+      Object.keys(obj).forEach(function(k){ fields[k] = jsToFs(obj[k]); });
+      return {mapValue: {fields: fields}};
+    }
+    return {stringValue: String(obj)};
+  }
+
+  // Verileri yükle
+  useEffect(function() {
+    fetch(FS_URL, {
+      headers: {"Authorization": "Bearer " + fbUser.idToken}
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+      if (data.fields) {
+        var d = fsToJs(data.fields);
+        if (d.prog) setProg(d.prog);
+        if (d.dens) setDens(d.dens);
+        if (d.user) setUser(d.user);
+        if (d.darkMode !== undefined) setDarkMode(d.darkMode);
+      }
+      setDataLoaded(true);
+    })
+    .catch(function(){ setDataLoaded(true); });
+  }, [fbUser.uid]);
+
+  var progRef2 = useRef(prog);
+  var densRef2 = useRef(dens);
+  var userRef2 = useRef(user);
+  useEffect(function(){ progRef2.current = prog; }, [prog]);
+  useEffect(function(){ densRef2.current = dens; }, [dens]);
+  useEffect(function(){ userRef2.current = user; }, [user]);
+
+  function saveToCloud(extra) {
+    var data = Object.assign({prog: progRef2.current, dens: densRef2.current, user: userRef2.current}, extra || {});
+    var fields = {};
+    Object.keys(data).forEach(function(k){ fields[k] = jsToFs(data[k]); });
+    var doSave = function() {
+      fetch(FS_URL, {
+        method: "PATCH",
+        headers: {"Content-Type": "application/json", "Authorization": "Bearer " + fbUser.idToken},
+        body: JSON.stringify({fields: fields})
+      }).catch(function(e){ console.log("Save err:", e); });
+    };
+    doSave();
+  }
+
+  useEffect(function(){
+    if (dataLoaded) saveToCloud();
+  }, [prog, dens, user]);
+
+  function handleSignOut() {
+    onSignOut();
+  }
+  var [tab, setTab] = useState("program");
+  var todayRef = useRef(null);
+  var scrollContainerRef = useRef(null);
+
+  // Tab değişince veya program yüklenince bugüne scroll et
+  useEffect(function() {
+    if (tab === "program" && todayRef.current && scrollContainerRef.current) {
+      setTimeout(function() {
+        if (todayRef.current) {
+          todayRef.current.scrollIntoView({behavior:"smooth", block:"start"});
+        }
+      }, 200);
+    }
+  }, [tab, prog]);
+  var [modal, setModal] = useState(false);
+  var [area, setArea] = useState("SAY");
+  var [sel, setSel] = useState({});
+  var [tdate, setTdate] = useState("2026-06-20");
+  var [denTip, setDenTip] = useState("TYT");
+  var [denIn, setDenIn] = useState({});
+  var [denErr, setDenErr] = useState("");
+  var [progHedef, setProgHedef] = useState("");
+  var [modalStep, setModalStep] = useState(1);
+  var [tytHedef, setTytHedef] = useState("");
+  var [aytHedef, setAytHedef] = useState("");
+  var [darkMode, setDarkMode] = useState(lsGet("pyk_dark") || false);
+  var [themeAnim, setThemeAnim] = useState(false);
+
+  // Onboarding state
+  var [obStep, setObStep] = useState(1);
+  var [obName, setObName] = useState("");
+  var [obHedef, setObHedef] = useState("");
+  var [obCustom, setObCustom] = useState("");
+
+  // Theme colors
+  var T = darkMode ? {
+    bg: "#0f172a", bg2: "#1e293b", bg3: "#334155",
+    card: "#1e293b", border: "#334155", text: "#f1f5f9",
+    text2: "#94a3b8", text3: "#64748b",
+    primary: "#00d4c8", primaryGrad: "linear-gradient(135deg,#00d4c8,#00a8a0)",
+    shadow: "rgba(0,0,0,.4)", navBg: "#0f172a"
+  } : {
+    bg: "#fff", bg2: "#f8fafc", bg3: "#f1f5f9",
+    card: "#fff", border: "#f1f5f9", text: "#1e293b",
+    text2: "#64748b", text3: "#94a3b8",
+    primary: "#00d4c8", primaryGrad: "linear-gradient(135deg,#00d4c8,#00a8a0)",
+    shadow: "rgba(0,0,0,.06)", navBg: "#fff"
+  };
+
+  function toggleDark() {
+    setThemeAnim(true);
+    setTimeout(function(){
+      var nd = !darkMode;
+      setDarkMode(nd);
+      lsSet("pyk_dark", nd);
+      saveToCloud({darkMode: nd});
+      setThemeAnim(false);
+    }, 200);
+  }
+
+  function completeOnboarding() {
+    var u = {name: obName.trim(), createdAt: new Date().toISOString()};
+    setUser(u);
+    saveToCloud({user: u});
+  }
+
+  // Eğer kullanıcı verisi yoksa Firebase'den ismi al
+  useEffect(function() {
+    if (dataLoaded && !user && fbUser) {
+      // Firestore'dan ismi çek
+      fetch(FS_URL, {headers:{"Authorization":"Bearer "+fbUser.idToken}})
+      .then(function(r){ return r.json(); })
+      .then(function(data) {
+        var name = fbUser.name || (data.fields && data.fields.name && data.fields.name.stringValue) || fbUser.email.split("@")[0];
+        var u = {name: name, createdAt: new Date().toISOString()};
+        setUser(u);
+        saveToCloud({user: u});
+      }).catch(function() {
+        var u = {name: fbUser.email.split("@")[0], createdAt: new Date().toISOString()};
+        setUser(u);
+      });
+    }
+  }, [dataLoaded, user, fbUser]);
+
+  if (!dataLoaded) return (
+    React.createElement('div', { style: {background:"#0a1628",height:"100dvh",display:"flex",alignItems:"center",justifyContent:"center",
+      fontFamily:"sans-serif",color:"#94a3b8",fontSize:14,flexDirection:"column",gap:12},}
+      , React.createElement(Logo, { size: 56,})
+      , React.createElement('div', null, "Veriler yükleniyor..." )
+    )
+  );
+
+  var cd = prog ? Math.max(0, Math.ceil((new Date(prog.targetDate)-new Date())/86400000)) : null;
+  var tot = 0, don = 0;
+  if (prog) prog.plan.forEach(function(d){ d.tasks.forEach(function(t){ tot++; if(t.done) don++; }); });
+  var pct = tot > 0 ? Math.round(don/tot*100) : 0;
+
+  function toggleTask(di, ti) {
+    setProg(function(p) {
+      return Object.assign({}, p, {plan: p.plan.map(function(d,di2) {
+        if (di2 !== di) return d;
+        return Object.assign({}, d, {tasks: d.tasks.map(function(t,ti2) {
+          if (ti2 !== ti) return t;
+          return Object.assign({}, t, {done:!t.done});
+        })});
+      })});
+    });
+  }
+
+  function generate() {
+    var sl = Object.entries(sel).map(function(e){ return {name:e[0], duration:e[1]}; });
+    if (!sl.length) return;
+    var plan = makePlan(sl, tdate);
+    if (!plan) return;
+    var hedefStr = "TYT hedefi: " + (tytHedef.trim() || "belirtilmedi");
+    if (aytHedef.trim()) hedefStr += " | AYT hedefi: " + aytHedef.trim();
+    setProg({plan:plan, targetDate:tdate, hedef:hedefStr, tytHedef:tytHedef.trim(), aytHedef:aytHedef.trim(), createdAt:new Date().toISOString()});
+    setSel({}); setModal(false); setModalStep(1); setTytHedef(""); setAytHedef(""); setTab("program");
+  }
+
+  var hasAyt = Object.keys(sel).some(function(k){ return k.startsWith("AYT"); });
+
+  function saveDen() {
+    setDenErr("");
+    var dl = DERSLER[denTip];
+    var detay = {}; var net = 0;
+    dl.forEach(function(d) {
+      var dv = parseFloat(denIn["d_"+d]) || 0;
+      var yv = parseFloat(denIn["y_"+d]) || 0;
+      var n = parseFloat((dv - yv*0.25).toFixed(2));
+      detay[d] = {d:dv, y:yv, net:n};
+      net += n;
+    });
+    net = parseFloat(net.toFixed(2));
+    var yeni = {id:"d"+Date.now(), tip:denTip, detay:detay, toplamNet:net, tarih:new Date().toISOString()};
+    var nd = [yeni].concat(dens);
+    setDens(nd);
+    lsSet("pyk_dens", nd);
+    setDenIn({});
+    setDenErr("✅ Kaydedildi! Net: " + net);
+  }
+
+  function delDen(id) {
+    var nd = dens.filter(function(d){ return d.id !== id; });
+    setDens(nd);
+    lsSet("pyk_dens", nd);
+  }
+
+  var cats = Object.entries(MUF).filter(function(e){ return e[1].a.includes(area); });
+  var selCount = Object.keys(sel).length;
+  var selDays = Object.values(sel).reduce(function(s,d){ return s+d; }, 0);
+
+  return (
+    React.createElement('div', { style: {display:"flex",flexDirection:"column",height:"100dvh",overflow:"hidden",
+      fontFamily:"Inter,sans-serif",
+      background:"#0b1326", color:"#dae2fd",
+      opacity: themeAnim ? 0 : 1,
+      transition:"opacity 0.2s ease"},}
+
+      /* HEADER - yeni tasarım */
+      , React.createElement('header', { style: {background:"rgba(11,19,38,0.8)",backdropFilter:"blur(24px)",
+        WebkitBackdropFilter:"blur(24px)",
+        display:"flex",justifyContent:"space-between",alignItems:"center",
+        padding:"16px",paddingTop:"calc(16px + env(safe-area-inset-top))",
+        position:"sticky",top:0,zIndex:50,
+        boxShadow:"0 10px 30px rgba(6,14,32,0.5)",flexShrink:0,
+        borderBottom:"1px solid rgba(79,70,229,0.1)"},}
+        , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:12},}
+          , React.createElement(Logo, { size: 36,})
+          , React.createElement('div', null
+            , React.createElement('div', { style: {fontSize:11,color:"#c7c4d8",fontWeight:500},}
+              , user ? "Merhaba, "+user.name : "Merhaba"
+            )
+            , React.createElement('div', { style: {fontSize:18,fontWeight:800,letterSpacing:"-0.05em",
+              background:"linear-gradient(to right,#4f46e5,#7c3aed)",
+              WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
+              backgroundClip:"text",fontFamily:"Manrope,sans-serif"},}, "PruvaYKS"
+
+            )
+          )
+        )
+        , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:8},}
+          , cd !== null && (
+            React.createElement('div', { style: {display:"flex",alignItems:"center",gap:4,fontSize:10,color:"#24ddd1",fontWeight:700},}
+              , React.createElement('svg', { viewBox: "0 0 24 24"   , fill: "none", stroke: "#24ddd1", strokeWidth: "2", style: {width:13,height:13},}
+                , React.createElement('rect', { x: "3", y: "4", width: "18", height: "18", rx: "2",}), React.createElement('line', { x1: "16", y1: "2", x2: "16", y2: "6",}), React.createElement('line', { x1: "8", y1: "2", x2: "8", y2: "6",}), React.createElement('line', { x1: "3", y1: "10", x2: "21", y2: "10",})
+              )
+              , cd, " Gün"
+            )
+          )
+          , prog && (
+            React.createElement('button', { onClick: function(){ setProg(null); lsSet("pyk_prog",null); },
+              style: {background:"none",border:"1px solid rgba(70,69,85,0.3)",borderRadius:8,
+                padding:"6px 8px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"},}
+              , React.createElement('svg', { viewBox: "0 0 24 24"   , fill: "none", stroke: "#918fa1", strokeWidth: "2", style: {width:14,height:14},}
+                , React.createElement('polyline', { points: "3 6 5 6 21 6"     ,}), React.createElement('path', { d: "M19 6l-1 14H6L5 6"   ,}), React.createElement('path', { d: "M10 11v6M14 11v6"  ,}), React.createElement('path', { d: "M9 6V4h6v2" ,})
+              )
+            )
+          )
+          , React.createElement('button', { onClick: function(){ setModal(true); },
+            style: {background:"linear-gradient(135deg,#4f46e5,#7c3aed)",color:"#fff",border:"none",
+              borderRadius:20,padding:"8px 14px",fontSize:11,fontWeight:700,cursor:"pointer",
+              boxShadow:"0 4px 14px rgba(79,70,229,0.4)"},}, "✦ Program"
+
+          )
+        )
+      )
+
+      , React.createElement('div', { ref: scrollContainerRef, style: {flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",
+        background:"#0b1326",
+        padding:"16px 16px 100px",minHeight:0,display:"block"},}
+
+        , tab === "program" && (
+          prog ? (
+            React.createElement(React.Fragment, null
+              /* İlerleme özeti */
+              , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16},}
+                , React.createElement('div', { style: {background:"#131b2e",borderRadius:16,padding:16,
+                  border:"1px solid rgba(70,69,85,0.1)",position:"relative",overflow:"hidden"},}
+                  , React.createElement('div', { style: {position:"absolute",top:8,right:8,fontSize:9,fontWeight:700,
+                    color:"#24ddd1",textTransform:"uppercase",letterSpacing:"0.1em"},}, "Bugün")
+                  , React.createElement('div', { style: {position:"relative",width:80,height:80,margin:"0 auto 8px"},}
+                    , React.createElement('svg', { width: "80", height: "80", style: {transform:"rotate(-90deg)"},}
+                      , React.createElement('circle', { cx: "40", cy: "40", r: "34", fill: "transparent", stroke: "#222a3d", strokeWidth: "6",})
+                      , React.createElement('circle', { cx: "40", cy: "40", r: "34", fill: "transparent", stroke: "#24ddd1", strokeWidth: "6",
+                        strokeDasharray: "213.6",
+                        strokeDashoffset: 213.6 - (213.6 * pct / 100),
+                        strokeLinecap: "round",})
+                    )
+                    , React.createElement('div', { style: {position:"absolute",inset:0,display:"flex",flexDirection:"column",
+                      alignItems:"center",justifyContent:"center"},}
+                      , React.createElement('span', { style: {fontSize:18,fontWeight:800,color:"#dae2fd",fontFamily:"Manrope"},}, pct, "%")
+                    )
+                  )
+                  , React.createElement('div', { style: {textAlign:"center",fontSize:11,fontWeight:600,color:"#dae2fd"},}, "Tamamlandı")
+                )
+                , React.createElement('div', { style: {background:"linear-gradient(135deg,rgba(79,70,229,0.2),transparent)",
+                  borderRadius:16,padding:16,border:"1px solid rgba(79,70,229,0.1)",
+                  borderLeft:"4px solid #4f46e5",display:"flex",flexDirection:"column",justifyContent:"center"},}
+                  , cd !== null && (
+                    React.createElement('div', { style: {fontSize:13,fontWeight:700,color:"#dae2fd",marginBottom:4},}, "📅 Sınava "
+                        , React.createElement('span', { style: {color:"#c3c0ff",fontSize:20,fontWeight:800},}, cd), " gün kaldı"
+                    )
+                  )
+                  , prog.tytHedef && React.createElement('div', { style: {fontSize:11,color:"#24ddd1",fontWeight:600},}, "TYT: " , prog.tytHedef)
+                  , prog.aytHedef && React.createElement('div', { style: {fontSize:11,color:"#24ddd1",fontWeight:600},}, "AYT: " , prog.aytHedef)
+                )
+              )
+
+              /* Görev listesi */
+              , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12},}
+                , React.createElement('h3', { style: {fontSize:16,fontWeight:700,color:"#dae2fd",fontFamily:"Manrope"},}, "Çalışma Planın" )
+                , React.createElement('span', { style: {fontSize:11,color:"#918fa1"},}, new Date().toLocaleDateString("tr-TR",{day:"numeric",month:"long",weekday:"short"}))
+              )
+
+              , prog.plan.map(function(day, di) {
+                var dt = day.tasks.filter(function(t){return t.done;}).length;
+                var tt = day.tasks.length;
+                var p = tt > 0 ? Math.round(dt/tt*100) : 0;
+                var sp = day.special;
+                var m = day.moral || MORALLER[di%MORALLER.length];
+                var today2 = new Date(); today2.setHours(0,0,0,0);
+                var dayDate = new Date(today2); dayDate.setDate(today2.getDate()+di);
+                var isToday = dayDate.getTime() === today2.getTime();
+                var isPast = dayDate < today2;
+                return (
+                  React.createElement('div', { key: di, ref: isToday ? todayRef : null,
+                    style: {background:isToday?"rgba(79,70,229,0.08)":"#131b2e",
+                      borderRadius:16,border:isToday?"1px solid rgba(79,70,229,0.3)":"1px solid rgba(70,69,85,0.1)",
+                      overflow:"hidden",marginBottom:12,opacity:isPast?0.6:1},}
+                    /* Gün başlığı */
+                    , React.createElement('div', { style: {padding:"12px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",
+                      borderBottom:"1px solid rgba(70,69,85,0.1)"},}
+                      , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:8},}
+                        , isToday && React.createElement('span', { style: {fontSize:9,fontWeight:700,color:"#24ddd1",
+                          textTransform:"uppercase",letterSpacing:"0.1em",
+                          background:"rgba(36,221,209,0.1)",padding:"2px 8px",borderRadius:9},}, "Bugün")
+                        , React.createElement('span', { style: {fontSize:11,fontWeight:700,color:isToday?"#c3c0ff":"#c7c4d8",
+                          textTransform:"uppercase",letterSpacing:"0.04em"},}, day.tarih)
+                      )
+                      , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:6},}
+                        , p===100 && React.createElement('span', { style: {color:"#24ddd1",fontSize:14},}, "✓")
+                        , p>0 && p<100 && (
+                          React.createElement('div', { style: {width:40,height:3,background:"rgba(70,69,85,0.3)",borderRadius:9},}
+                            , React.createElement('div', { style: {width:p+"%",height:"100%",background:"linear-gradient(to right,#4f46e5,#24ddd1)",borderRadius:9},})
+                          )
+                        )
+                        , React.createElement('span', { style: {fontSize:9,color:"#918fa1"},}, "#", di+1)
+                      )
+                    )
+                    /* Motivasyon */
+                    , React.createElement('div', { style: {margin:"8px 12px 0",padding:"8px 12px",borderRadius:10,
+                      background:sp?"rgba(79,70,229,0.1)":"rgba(36,221,209,0.05)",
+                      borderLeft:"3px solid "+(sp?"#4f46e5":"#24ddd1")},}
+                      , React.createElement('span', { style: {fontSize:11,color:sp?"#c3c0ff":"#24ddd1",fontWeight:600},}, m.e, " " , m.m)
+                    )
+                    /* Görevler */
+                    , React.createElement('div', { style: {padding:"8px 12px 12px",display:"flex",flexDirection:"column",gap:6},}
+                      , day.tasks.map(function(t, ti) {
+                        var tColors = {
+                          rutin:{bg:"rgba(74,242,230,0.05)",bd:"#4af2e6",label:"#24ddd1"},
+                          ana:{bg:"rgba(195,192,255,0.05)",bd:"#c3c0ff",label:"#c3c0ff"},
+                          deneme:{bg:"rgba(210,187,255,0.05)",bd:"#d2bbff",label:"#d2bbff"},
+                          tekrar:{bg:"rgba(79,70,229,0.05)",bd:"#4f46e5",label:"#818cf8"}
+                        };
+                        var tc = tColors[t.t] || tColors.ana;
+                        return (
+                          React.createElement('div', { key: ti, onClick: function(){ toggleTask(di,ti); },
+                            style: {background:t.done?"rgba(36,221,209,0.03)":tc.bg,
+                              borderRadius:12,padding:"10px 12px",cursor:"pointer",
+                              border:"1px solid "+(t.done?"rgba(70,69,85,0.1)":tc.bd+"33"),
+                              borderLeft:"3px solid "+(t.done?"#464555":tc.bd),
+                              opacity:t.done?0.5:1,
+                              display:"flex",alignItems:"flex-start",gap:10,
+                              transition:"all 0.2s"},}
+                            , React.createElement('div', { style: {width:18,height:18,borderRadius:"50%",
+                              border:"2px solid "+(t.done?"#24ddd1":tc.bd),
+                              background:t.done?"#24ddd1":"transparent",
+                              display:"flex",alignItems:"center",justifyContent:"center",
+                              flexShrink:0,marginTop:1,fontSize:10,color:"#0b1326",fontWeight:900},}
+                              , t.done?"✓":""
+                            )
+                            , React.createElement('div', { style: {flex:1,minWidth:0},}
+                              , React.createElement('div', { style: {fontSize:13,fontWeight:600,color:"#dae2fd",
+                                lineHeight:1.3,textDecoration:t.done?"line-through":"none"},}, t.i)
+                              , React.createElement('div', { style: {fontSize:9,fontWeight:700,color:tc.label,
+                                textTransform:"uppercase",letterSpacing:"0.08em",marginTop:2},}, t.n)
+                            )
+                          )
+                        );
+                      })
+                    )
+                  )
+                );
+              })
+            )
+          ) : (
+          React.createElement('div', { style: {textAlign:"center",padding:"60px 16px"},}
+              , React.createElement('div', { style: {fontSize:48,marginBottom:12},}, "✨")
+              , React.createElement('div', { style: {fontSize:16,fontWeight:800,color:"#dae2fd",marginBottom:5,fontFamily:"Manrope"},}, "Henüz program yok"  )
+              , React.createElement('div', { style: {fontSize:13,color:"#c7c4d8",marginBottom:24},}, "Alan seç, konuları işaretle, program oluştur."     )
+              , React.createElement('button', { onClick: function(){ setModal(true); },
+                style: {background:"linear-gradient(135deg,#4f46e5,#7c3aed)",color:"#fff",border:"none",
+                  borderRadius:20,padding:"14px 32px",fontSize:14,fontWeight:700,cursor:"pointer",
+                  boxShadow:"0 8px 24px rgba(79,70,229,0.4)"},}, "✦ Programı Oluştur"
+
+              )
+            )
+          )
+        )
+
+        , tab === "deneme" && (
+          React.createElement('div', null
+            /* Yeni Deneme Kaydı */
+            , React.createElement('div', { style: {background:"#131b2e",borderRadius:16,padding:16,
+              border:"1px solid rgba(70,69,85,0.1)",marginBottom:16},}
+              , React.createElement('div', { style: {fontSize:15,fontWeight:700,color:"#dae2fd",marginBottom:12,fontFamily:"Manrope"},}, "Yeni Deneme Kaydı"  )
+              , React.createElement('div', { style: {display:"flex",gap:6,background:"rgba(70,69,85,0.2)",padding:4,borderRadius:12,marginBottom:12},}
+                , ["TYT","AYT"].map(function(t) {
+                  return React.createElement('button', { key: t, onClick: function(){ setDenTip(t); setDenErr(""); },
+                    style: {flex:1,padding:"8px 0",borderRadius:8,border:"none",cursor:"pointer",fontSize:12,
+                      fontWeight:700,background:denTip===t?"linear-gradient(135deg,#4f46e5,#7c3aed)":"transparent",
+                      color:denTip===t?"#fff":"#918fa1",transition:"all 0.2s"},}
+                    , t
+                  );
+                })
+              )
+              , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 68px 68px",gap:5,marginBottom:7,padding:"0 4px"},}
+                , React.createElement('span', { style: {fontSize:9,fontWeight:700,color:"#918fa1",textTransform:"uppercase",letterSpacing:"0.1em"},}, "Ders")
+                , React.createElement('span', { style: {fontSize:9,fontWeight:700,color:"#24ddd1",textTransform:"uppercase",textAlign:"center"},}, "Doğru")
+                , React.createElement('span', { style: {fontSize:9,fontWeight:700,color:"#ffb4ab",textTransform:"uppercase",textAlign:"center"},}, "Yanlış")
+              )
+              , DERSLER[denTip].map(function(d) {
+                return (
+                  React.createElement('div', { key: d, style: {display:"grid",gridTemplateColumns:"1fr 68px 68px",gap:5,alignItems:"center",
+                    background:"rgba(19,27,46,0.8)",padding:"8px 10px",borderRadius:10,marginBottom:6,
+                    border:"1px solid rgba(70,69,85,0.1)"},}
+                    , React.createElement('span', { style: {fontSize:12,fontWeight:600,color:"#c7c4d8"},}, d)
+                    , React.createElement('input', { type: "number", min: "0", placeholder: "0",
+                      value: denIn["d_"+d]||"",
+                      onChange: function(e){ var v=e.target.value; setDenIn(function(p){ return Object.assign({},p,{["d_"+d]:v}); }); },
+                      style: {padding:"7px 4px",borderRadius:7,border:"1px solid rgba(36,221,209,0.3)",fontSize:13,
+                        fontWeight:800,textAlign:"center",outline:"none",background:"rgba(36,221,209,0.05)",
+                        width:"100%",color:"#24ddd1"},})
+                    , React.createElement('input', { type: "number", min: "0", placeholder: "0",
+                      value: denIn["y_"+d]||"",
+                      onChange: function(e){ var v=e.target.value; setDenIn(function(p){ return Object.assign({},p,{["y_"+d]:v}); }); },
+                      style: {padding:"7px 4px",borderRadius:7,border:"1px solid rgba(255,180,171,0.3)",fontSize:13,
+                        fontWeight:800,textAlign:"center",outline:"none",background:"rgba(255,180,171,0.05)",
+                        width:"100%",color:"#ffb4ab"},})
+                  )
+                );
+              })
+              , denErr && React.createElement('div', { style: {fontSize:12,fontWeight:700,color:denErr.startsWith("✅")?"#24ddd1":"#ffb4ab",textAlign:"center",marginTop:6},}, denErr)
+              , React.createElement('button', { onClick: saveDen,
+                style: {width:"100%",background:"linear-gradient(135deg,#4f46e5,#7c3aed)",color:"#fff",border:"none",
+                  borderRadius:20,padding:"14px 0",fontSize:13,fontWeight:700,cursor:"pointer",marginTop:12,
+                  boxShadow:"0 8px 24px rgba(79,70,229,0.3)"},}, "Kaydet"
+
+              )
+            )
+
+            /* Performance hero - son deneme */
+            , dens.length > 0 && (
+              React.createElement('div', { style: {position:"relative",marginBottom:16},}
+                , React.createElement('div', { style: {position:"absolute",inset:-1,background:"linear-gradient(to right,#4f46e5,#6001d1)",
+                  borderRadius:17,filter:"blur(8px)",opacity:0.25},})
+                , React.createElement('div', { style: {position:"relative",background:"rgba(45,52,73,0.6)",backdropFilter:"blur(24px)",
+                  borderRadius:16,padding:24,border:"1px solid rgba(255,255,255,0.05)"},}
+                  , React.createElement('div', { style: {fontSize:10,color:"#918fa1",fontWeight:500,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8},}, "Son "
+                     , dens[0].tip, " Performansı"
+                  )
+                  , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center"},}
+                    , React.createElement('div', null
+                      , React.createElement('div', { style: {fontSize:48,fontWeight:800,color:"#dae2fd",fontFamily:"Manrope",lineHeight:1},}
+                        , dens[0].toplamNet, " " , React.createElement('span', { style: {fontSize:20,color:"#24ddd1"},}, "Net")
+                      )
+                      , dens.length > 1 && dens[1].tip === dens[0].tip && (
+                        React.createElement('div', { style: {display:"flex",alignItems:"center",gap:6,color:"#24ddd1",fontWeight:700,fontSize:14,marginTop:4},}
+                          , React.createElement('span', null, parseFloat((dens[0].toplamNet-dens[1].toplamNet).toFixed(2))>=0?"↑":"↓")
+                          , React.createElement('span', null, Math.abs(parseFloat((dens[0].toplamNet-dens[1].toplamNet).toFixed(2))))
+                          , React.createElement('span', { style: {color:"#918fa1",fontWeight:400,fontSize:11},}, "son denemeden" )
+                        )
+                      )
+                    )
+                    , React.createElement('div', { style: {width:52,height:52,borderRadius:"50%",
+                      background:"linear-gradient(135deg,#4f46e5,#7c3aed)",
+                      display:"flex",alignItems:"center",justifyContent:"center",fontSize:24},}, "🏆"
+
+                    )
+                  )
+                )
+              )
+            )
+
+            , dens.length === 0
+              ? React.createElement('div', { style: {textAlign:"center",padding:"28px 0",color:"#918fa1",fontWeight:600,fontSize:13},}, "📊 Henüz deneme kaydı yok."    )
+              : dens.map(function(den, i) {
+                  var prev = dens.slice(i+1).find(function(x){ return x.tip === den.tip; });
+                  var td = prev != null ? parseFloat((den.toplamNet - prev.toplamNet).toFixed(2)) : null;
+                  var dt = new Date(den.tarih).toLocaleDateString("tr-TR",{day:"numeric",month:"long"});
+                  return (
+                    React.createElement('div', { key: den.id, style: {background:"#131b2e",borderRadius:16,padding:16,
+                      border:"1px solid rgba(70,69,85,0.1)",marginBottom:10},}
+                      , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12},}
+                        , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:8},}
+                          , React.createElement('span', { style: {padding:"3px 12px",borderRadius:100,fontSize:10,fontWeight:700,
+                            background:den.tip==="TYT"?"rgba(79,70,229,0.2)":"rgba(96,1,209,0.2)",
+                            color:den.tip==="TYT"?"#c3c0ff":"#d2bbff"},}
+                            , den.tip
+                          )
+                          , React.createElement('span', { style: {fontSize:11,color:"#918fa1"},}, dt)
+                        )
+                        , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:8},}
+                          , React.createElement('div', { style: {textAlign:"right"},}
+                            , React.createElement('div', { style: {fontSize:20,fontWeight:800,color:"#dae2fd",lineHeight:1},}, den.toplamNet)
+                            , React.createElement('div', { style: {fontSize:8,fontWeight:600,color:"#918fa1",textTransform:"uppercase"},}, "Net")
+                          )
+                          , td !== null && (
+                            React.createElement('div', { style: {padding:"3px 10px",borderRadius:20,fontSize:12,fontWeight:700,
+                              background:td>=0?"rgba(36,221,209,0.1)":"rgba(255,180,171,0.1)",
+                              color:td>=0?"#24ddd1":"#ffb4ab"},}
+                              , td>=0?"↑":"↓", Math.abs(td)
+                            )
+                          )
+                          , React.createElement('button', { onClick: function(){ delDen(den.id); },
+                            style: {background:"none",border:"none",cursor:"pointer",fontSize:14,color:"#464555",padding:3},}, "✕")
+                        )
+                      )
+                      , Object.entries(den.detay).map(function(e) {
+                        var d = e[0]; var s = e[1];
+                        var pn = prev && prev.detay && prev.detay[d] ? prev.detay[d].net : null;
+                        var df = pn !== null ? parseFloat((s.net - pn).toFixed(2)) : null;
+                        var pct2 = den.tip==="TYT" ? {Türkçe:40,Matematik:40,Sosyal:20,Fen:20}[d]||40 : 160;
+                        return (
+                          React.createElement('div', { key: d, style: {background:"rgba(19,27,46,0.8)",borderRadius:10,padding:"8px 12px",marginBottom:4,
+                            border:"1px solid rgba(70,69,85,0.1)"},}
+                            , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6},}
+                              , React.createElement('span', { style: {fontSize:12,fontWeight:600,color:"#c7c4d8"},}, d)
+                              , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:8},}
+                                , React.createElement('span', { style: {fontSize:10,color:"#918fa1"},}, s.d, "D/", s.y, "Y")
+                                , React.createElement('span', { style: {fontSize:14,fontWeight:800,color:"#dae2fd"},}, s.net)
+                                , React.createElement('span', { style: {fontSize:11,fontWeight:700,
+                                  color:df===null?"#464555":df>0?"#24ddd1":df<0?"#ffb4ab":"#918fa1"},}
+                                  , df===null?"—":df>0?"↑"+Math.abs(df):df<0?"↓"+Math.abs(df):"="
+                                )
+                              )
+                            )
+                            , React.createElement('div', { style: {height:3,background:"rgba(70,69,85,0.3)",borderRadius:9},}
+                              , React.createElement('div', { style: {width:Math.min(100,Math.round(s.net/pct2*100))+"%",height:"100%",
+                                background:"linear-gradient(to right,#4f46e5,#24ddd1)",borderRadius:9},})
+                            )
+                          )
+                        );
+                      })
+                    )
+                  );
+                })
+            
+          )
+        )
+      )
+, React.createElement('nav', { style: {position:"fixed",bottom:0,left:0,right:0,zIndex:50,
+        display:"flex",justifyContent:"space-around",alignItems:"center",
+        padding:"12px 16px",paddingBottom:"calc(12px + env(safe-area-inset-bottom))",
+        background:"rgba(11,19,38,0.9)",backdropFilter:"blur(24px)",
+        WebkitBackdropFilter:"blur(24px)",
+        borderRadius:"32px 32px 0 0",
+        borderTop:"1px solid rgba(79,70,229,0.1)",
+        boxShadow:"0 -10px 40px rgba(6,14,32,0.6)"},}
+        , [
+          {k:"program",l:"Takvim",icon:(
+            React.createElement('svg', { viewBox: "0 0 24 24"   , fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", style: {width:20,height:20},}
+              , React.createElement('rect', { x: "3", y: "4", width: "18", height: "18", rx: "2",}), React.createElement('line', { x1: "16", y1: "2", x2: "16", y2: "6",}), React.createElement('line', { x1: "8", y1: "2", x2: "8", y2: "6",}), React.createElement('line', { x1: "3", y1: "10", x2: "21", y2: "10",})
+            )
+          )},
+          {k:"deneme",l:"Performans",icon:(
+            React.createElement('svg', { viewBox: "0 0 24 24"   , fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", style: {width:20,height:20},}
+              , React.createElement('line', { x1: "18", y1: "20", x2: "18", y2: "10",}), React.createElement('line', { x1: "12", y1: "20", x2: "12", y2: "4",}), React.createElement('line', { x1: "6", y1: "20", x2: "6", y2: "14",})
+            )
+          )},
+          {k:"ai",l:"Tech AI",icon:(
+            React.createElement('svg', { viewBox: "0 0 24 24"   , fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", style: {width:20,height:20},}
+              , React.createElement('path', { d: "M12 2a4 4 0 0 1 4 4v1h1a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v1a4 4 0 0 1-8 0v-1H7a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1V6a4 4 0 0 1 4-4z"                                     ,})
+              , React.createElement('circle', { cx: "9", cy: "10", r: "1", fill: "currentColor",}), React.createElement('circle', { cx: "15", cy: "10", r: "1", fill: "currentColor",})
+            )
+          )},
+          {k:"ayarlar",l:"Profil",icon:(
+            React.createElement('svg', { viewBox: "0 0 24 24"   , fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", style: {width:20,height:20},}
+              , React.createElement('circle', { cx: "12", cy: "8", r: "4",}), React.createElement('path', { d: "M4 20c0-4 3.6-7 8-7s8 3 8 7"      ,})
+            )
+          )},
+        ].map(function(item) {
+          var isActive = tab === item.k;
+          return (
+            React.createElement('button', { key: item.k, onClick: function(){ setTab(item.k); },
+              style: {display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+                padding:"8px 14px",border:"none",cursor:"pointer",gap:4,
+                background: isActive ? "linear-gradient(135deg,#4f46e5,#7c3aed)" : "transparent",
+                borderRadius:isActive?32:0,
+                color:isActive?"#fff":"#c7c4d8",
+                transition:"all 0.3s"},}
+              , item.icon
+              , React.createElement('span', { style: {fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",
+                fontFamily:"Inter,sans-serif"},}, item.l)
+            )
+          );
+        })
+      )
+
+      , tab === "ai" && (
+        React.createElement(TechAI, { prog: prog, setProg: setProg, dens: dens, user: user, fbUser: fbUser, saveToCloud: saveToCloud, T: T, darkMode: darkMode,})
+      )
+
+      , tab === "ayarlar" && (
+        React.createElement('div', { style: {position:"fixed",top:74,bottom:"calc(72px + env(safe-area-inset-bottom))",left:0,right:0,
+          overflowY:"auto",WebkitOverflowScrolling:"touch",background:"#0b1326",padding:16},}
+          , React.createElement('div', { style: {maxWidth:480,margin:"0 auto"},}
+            , React.createElement('div', { style: {fontSize:20,fontWeight:800,color:"#dae2fd",marginBottom:20,fontFamily:"Manrope"},}, "Ayarlar")
+            , React.createElement('div', { style: {background:"#131b2e",borderRadius:16,padding:16,border:"1px solid rgba(70,69,85,0.1)",marginBottom:12},}
+              , React.createElement('div', { style: {fontSize:10,fontWeight:700,color:"#918fa1",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:14},}, "Hesap")
+              , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:12,marginBottom:14},}
+                , React.createElement('div', { style: {width:48,height:48,borderRadius:"50%",overflow:"hidden",flexShrink:0,border:"2px solid rgba(79,70,229,0.4)"},}
+                  , React.createElement(Logo, { size: 48,})
+                )
+                , React.createElement('div', null
+                  , React.createElement('div', { style: {fontSize:15,fontWeight:700,color:"#dae2fd"},}, user ? user.name : "—")
+                  , React.createElement('div', { style: {fontSize:12,color:"#918fa1"},}, fbUser.email)
+                )
+              )
+              , React.createElement('button', { onClick: handleSignOut,
+                style: {width:"100%",padding:"12px",borderRadius:12,border:"1px solid rgba(70,69,85,0.3)",
+                  background:"transparent",color:"#c7c4d8",fontSize:13,fontWeight:600,cursor:"pointer"},}, "🚪 Çıkış Yap"
+
+              )
+            )
+            , React.createElement('div', { style: {background:"#131b2e",borderRadius:16,padding:16,border:"1px solid rgba(70,69,85,0.1)",marginBottom:12},}
+              , React.createElement('div', { style: {fontSize:10,fontWeight:700,color:"#918fa1",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:14},}, "Hakkında")
+              , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:12},}
+                , React.createElement(Logo, { size: 48,})
+                , React.createElement('div', null
+                  , React.createElement('div', { style: {fontSize:16,fontWeight:800,color:"#dae2fd",fontFamily:"Manrope"},}, "PruvaYKS")
+                  , React.createElement('div', { style: {fontSize:11,color:"#918fa1"},}, "Sürüm 1.0.1" )
+                  , React.createElement('div', { style: {fontSize:11,color:"#918fa1"},}, "Techno⁺ tarafından geliştirildi"  )
+                )
+              )
+            )
+            , React.createElement('div', { style: {background:"#131b2e",borderRadius:16,padding:16,border:"1px solid rgba(70,69,85,0.1)"},}
+              , React.createElement('div', { style: {fontSize:10,fontWeight:700,color:"#918fa1",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:14},}, "Veri")
+              , React.createElement('button', { onClick: function(){ setProg(null); setDens([]); setUser(null); saveToCloud({prog:null,dens:[],user:null}); },
+                style: {width:"100%",padding:"12px",borderRadius:12,border:"1px solid rgba(255,180,171,0.3)",
+                  background:"rgba(255,180,171,0.05)",color:"#ffb4ab",fontSize:13,fontWeight:600,cursor:"pointer"},}, "🗑 Tüm Verileri Sil"
+
+              )
+            )
+          )
+        )
+      )
+
+      , modal && (
+        React.createElement('div', { onClick: function(e){ if(e.target===e.currentTarget){ setModal(false); setModalStep(1); } },
+          style: {position:"fixed",inset:0,background:"rgba(6,14,32,0.85)",backdropFilter:"blur(12px)",
+            zIndex:200,display:"flex",flexDirection:"column",justifyContent:"flex-end"},}
+          , React.createElement('div', { style: {background:"#131b2e",borderRadius:"32px 32px 0 0",maxHeight:"92vh",
+            display:"flex",flexDirection:"column",overflow:"hidden",
+            border:"1px solid rgba(79,70,229,0.2)",borderBottom:"none"},}
+            , React.createElement('div', { style: {width:40,height:4,background:"rgba(70,69,85,0.5)",borderRadius:9,margin:"12px auto 0"},})
+
+            /* ADIM GÖSTERGESİ */
+            , React.createElement('div', { style: {padding:"12px 18px 0",flexShrink:0},}
+              , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10},}
+                , React.createElement('div', { style: {fontSize:16,fontWeight:800,color:"#dae2fd",fontFamily:"Manrope"},}, "Program Sihirbazı" )
+                , React.createElement('button', { onClick: function(){ setModal(false); setModalStep(1); },
+                  style: {width:30,height:30,borderRadius:"50%",border:"none",
+                    background:"rgba(70,69,85,0.3)",fontSize:17,color:"#918fa1",cursor:"pointer"},}, "×")
+              )
+              , React.createElement('div', { style: {display:"flex",gap:5,marginBottom:12},}
+                , [1,2,3].map(function(s){
+                  var active = modalStep === s;
+                  var done = modalStep > s;
+                  return (
+                    React.createElement('div', { key: s, style: {flex:1,height:4,borderRadius:9,
+                      background: done ? "#4f46e5" : active ? "#7c3aed" : "rgba(70,69,85,0.3)",
+                      transition:"background .2s"},})
+                  );
+                })
+              )
+            )
+
+            /* ADIM 1: TARİH + ALAN */
+            , modalStep === 1 && (
+              React.createElement('div', { style: {display:"flex",flexDirection:"column",flex:1,overflow:"hidden"},}
+                , React.createElement('div', { style: {padding:"0 18px 12px",borderBottom:"1px solid #f1f5f9",flexShrink:0},}
+                  , React.createElement('div', { style: {fontSize:11,fontWeight:700,color:"#918fa1",textTransform:"uppercase",letterSpacing:".07em",marginBottom:12},}, "📅 Sınav Tarihi & Alan"    )
+                  , React.createElement('div', { style: {marginBottom:12},}
+                    , React.createElement('label', { style: {fontSize:9,fontWeight:700,color:"#918fa1",textTransform:"uppercase",letterSpacing:".09em",display:"block",marginBottom:4},}, "Sınav Tarihi" )
+                    , React.createElement('input', { type: "date", value: tdate, onChange: function(e){ setTdate(e.target.value); },
+                      style: {padding:"10px 12px",borderRadius:10,background:"#0b1326",border:"1px solid rgba(70,69,85,0.4)",
+                        fontSize:14,fontWeight:700,color:"#dae2fd",outline:"none",width:"100%"},})
+                  )
+                  , React.createElement('div', null
+                    , React.createElement('label', { style: {fontSize:9,fontWeight:700,color:"#918fa1",textTransform:"uppercase",letterSpacing:".09em",display:"block",marginBottom:6},}, "Sınav Alanı" )
+                    , React.createElement('div', { style: {display:"flex",gap:7},}
+                      , [["SAY","🔵 Sayısal"],["EA","🟢 Eşit Ağırlık"],["SOZ","🟣 Sözel"]].map(function(av) {
+                        return (
+                          React.createElement('button', { key: av[0], onClick: function(){ setArea(av[0]); },
+                            style: {flex:1,padding:"12px 0",borderRadius:12,border:"2px solid",cursor:"pointer",fontSize:10,
+                              fontWeight:700,transition:"all .15s",
+                              borderColor:area===av[0]?"#4f46e5":"rgba(70,69,85,0.3)",
+                              background:area===av[0]?"rgba(79,70,229,0.15)":"rgba(19,27,46,0.8)",
+                              color:area===av[0]?"#c3c0ff":"#918fa1"},}
+                            , av[1]
+                          )
+                        );
+                      })
+                    )
+                  )
+                )
+                , React.createElement('div', { style: {padding:"14px 18px",flexShrink:0},}
+                  , React.createElement('button', { onClick: function(){ setModalStep(2); },
+                    style: {width:"100%",background:"linear-gradient(135deg,#4f46e5,#7c3aed)",color:"#fff",border:"none",
+                      borderRadius:20,padding:"13px",fontSize:13,fontWeight:700,cursor:"pointer",
+                      boxShadow:"0 4px 16px rgba(79,70,229,.3)"},}, "Devam Et →"
+
+                  )
+                )
+              )
+            )
+
+            /* ADIM 2: KONU SEÇİMİ */
+            , modalStep === 2 && (
+              React.createElement('div', { style: {display:"flex",flexDirection:"column",flex:1,overflow:"hidden"},}
+                , React.createElement('div', { style: {padding:"0 18px 10px",flexShrink:0},}
+                  , React.createElement('div', { style: {fontSize:11,fontWeight:800,color:"#94a3b8",textTransform:"uppercase",letterSpacing:".07em"},}, "📚 Çalışacağın Konular"  )
+                )
+                , React.createElement('div', { style: {overflowY:"auto",WebkitOverflowScrolling:"touch",padding:"0 14px",flexGrow:1,background:"#0b1326"},}
+                  , cats.map(function(ce) {
+                    var cat = ce[0]; var data = ce[1];
+                    var allOn = data.t.every(function(t){ return sel[t.n]; });
+                    var anyOn = data.t.some(function(t){ return sel[t.n]; });
+                    return (
+                      React.createElement('div', { key: cat, style: {background:"#131b2e",borderRadius:16,padding:12,border:"1px solid rgba(70,69,85,0.1)",marginBottom:10},}
+                        , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8},}
+                          , React.createElement('span', { style: {fontSize:9,fontWeight:700,color:"#c3c0ff",textTransform:"uppercase",letterSpacing:".09em"},}, cat)
+                          , React.createElement('button', { onClick: function(){
+                            setSel(function(p) {
+                              var n = Object.assign({},p);
+                              if (allOn) { data.t.forEach(function(t){ delete n[t.n]; }); }
+                              else { data.t.forEach(function(t){ n[t.n]=t.d; }); }
+                              return n;
+                            });
+                          }, style: {fontSize:9,fontWeight:700,padding:"2px 9px",borderRadius:6,border:"none",cursor:"pointer",
+                            background:allOn?"rgba(79,70,229,0.2)":"rgba(70,69,85,0.2)",
+                            color:allOn?"#c3c0ff":"#918fa1"},}
+                            , allOn?"Tümü":anyOn?"Seçili":"Tümünü Seç"
+                          )
+                        )
+                        , data.t.map(function(tp) {
+                          return (
+                            React.createElement('div', { key: tp.n, onClick: function(){
+                              setSel(function(p) {
+                                var n = Object.assign({},p);
+                                if (n[tp.n]) delete n[tp.n]; else n[tp.n]=tp.d;
+                                return n;
+                              });
+                            }, style: {borderRadius:9,padding:"8px 10px",cursor:"pointer",marginBottom:4,
+                              background:sel[tp.n]?"rgba(79,70,229,0.25)":"rgba(19,27,46,0.8)",
+                              border:"1px solid "+(sel[tp.n]?"rgba(79,70,229,0.5)":"rgba(70,69,85,0.2)"),
+                              color:sel[tp.n]?"#c3c0ff":"#c7c4d8",
+                              display:"flex",justifyContent:"space-between",alignItems:"center",
+                              fontSize:11,fontWeight:600,userSelect:"none"},}
+                              , React.createElement('span', null, tp.n)
+                              , React.createElement('span', { style: {fontSize:8,opacity:0.5},}, tp.d, "g")
+                            )
+                          );
+                        })
+                      )
+                    );
+                  })
+                )
+                , React.createElement('div', { style: {padding:"10px 18px",borderTop:"1px solid rgba(70,69,85,0.2)",display:"flex",gap:8,alignItems:"center",flexShrink:0},}
+                  , React.createElement('button', { onClick: function(){ setModalStep(1); },
+                    style: {padding:"11px 16px",borderRadius:20,border:"1px solid rgba(70,69,85,0.3)",background:"transparent",
+                      color:"#c7c4d8",fontSize:12,fontWeight:700,cursor:"pointer"},}, "← Geri" )
+                  , React.createElement('div', { style: {flex:1,fontSize:11,fontWeight:600,color:"#918fa1",textAlign:"center"},}, selCount, " konu · ~"   , selDays, "g")
+                  , React.createElement('button', { onClick: function(){
+                    if (!selCount) return;
+                    setModalStep(3);
+                  },
+                    disabled: !selCount,
+                    style: {padding:"11px 18px",borderRadius:20,border:"none",cursor:selCount?"pointer":"not-allowed",
+                      background:selCount?"linear-gradient(135deg,#4f46e5,#7c3aed)":"rgba(70,69,85,0.3)",
+                      color:selCount?"#fff":"#918fa1",fontSize:12,fontWeight:700,
+                      boxShadow:selCount?"0 4px 14px rgba(79,70,229,.3)":"none"},}, "Devam →"
+
+                  )
+                )
+              )
+            )
+
+            /* ADIM 3: HEDEF */
+            , modalStep === 3 && (
+              React.createElement('div', { style: {display:"flex",flexDirection:"column",flex:1,overflow:"hidden"},}
+                , React.createElement('div', { style: {padding:"0 18px 14px",flexShrink:0},}
+                  , React.createElement('div', { style: {fontSize:11,fontWeight:700,color:"#918fa1",textTransform:"uppercase",letterSpacing:".07em",marginBottom:14},}, "🎯 Hedef Netler"  )
+                  , React.createElement('div', { style: {marginBottom:14},}
+                    , React.createElement('label', { style: {fontSize:12,fontWeight:700,color:"#dae2fd",display:"block",marginBottom:6},}, "TYT Hedef Net"
+
+                      , React.createElement('span', { style: {fontSize:10,fontWeight:500,color:"#918fa1",marginLeft:6},}, "(max 120)" )
+                    )
+                    , React.createElement('input', { type: "text", value: tytHedef, onChange: function(e){ setTytHedef(e.target.value); },
+                      placeholder: "ör: 105 net"  ,
+                      style: {width:"100%",padding:"12px 14px",borderRadius:12,
+                        border:"1px solid rgba(70,69,85,0.4)",
+                        background:"rgba(19,27,46,0.8)",fontSize:15,fontWeight:700,color:"#dae2fd",outline:"none"},})
+                  )
+                  , React.createElement('div', { style: {marginBottom:6},}
+                    , React.createElement('label', { style: {fontSize:12,fontWeight:700,color:"#dae2fd",display:"block",marginBottom:6},}, "AYT Hedef Net"
+
+                      , React.createElement('span', { style: {fontSize:10,fontWeight:500,color:"#918fa1",marginLeft:6},}, "(isteğe bağlı)" )
+                    )
+                    , React.createElement('input', { type: "text", value: aytHedef, onChange: function(e){ setAytHedef(e.target.value); },
+                      placeholder: "ör: 80 net — girmeyeceksen boş bırak"      ,
+                      style: {width:"100%",padding:"12px 14px",borderRadius:12,
+                        border:"1px solid rgba(70,69,85,0.4)",
+                        background:"rgba(19,27,46,0.8)",fontSize:15,fontWeight:700,color:"#dae2fd",outline:"none"},})
+                  )
+                )
+                , React.createElement('div', { style: {padding:"0 18px 18px",display:"flex",gap:8,flexShrink:0},}
+                  , React.createElement('button', { onClick: function(){ setModalStep(2); },
+                    style: {padding:"12px 16px",borderRadius:20,border:"1px solid rgba(70,69,85,0.3)",
+                      background:"transparent",color:"#c7c4d8",fontSize:12,fontWeight:700,cursor:"pointer"},}, "← Geri" )
+                  , React.createElement('button', { onClick: generate,
+                    style: {flex:1,background:"linear-gradient(135deg,#4f46e5,#7c3aed)",color:"#fff",border:"none",
+                      borderRadius:20,padding:"13px",fontSize:13,fontWeight:700,cursor:"pointer",
+                      boxShadow:"0 6px 20px rgba(79,70,229,.3)"},}, "✦ PROGRAMI OLUŞTUR"
+
+                  )
+                )
+              )
+            )
+
+          )
+        )
+      )
+    )
+  );
+}
+
+// ─── TECH AI (GEMINI) ────────────────────────────────────────────────────────
+const GROQ_KEY = "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";
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+const GROQ_MODEL = "llama-3.3-70b-versatile";
+
+const QUICK = [
+  {e:"📋", t:"Programımı incele ve değerlendir"},
+  {e:"📊", t:"Deneme sonuçlarımı analiz et"},
+  {e:"📉", t:"Deneme netlerim düşüyor, ne yapmalıyım?"},
+  {e:"💪", t:"Motivasyonum bitti, yardım et"},
+  {e:"⏰", t:"Sınava az kaldı, son tekrar planı yap"},
+  {e:"➕", t:"Anlamadığım bir konuyu programa ekle"},
+];
+
+function lsGet2(k) { try { return JSON.parse(localStorage.getItem(k)); } catch(e) { return null; } }
+function lsSet2(k,v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} }
+
+function TechAI({prog, setProg, dens, user, fbUser, saveToCloud, T, darkMode}) {
+  var DT = {
+    bg:"#0b1326", card:"rgba(45,52,73,0.6)", border:"rgba(70,69,85,0.2)",
+    text:"#dae2fd", text2:"#c7c4d8", text3:"#918fa1",
+    primary:"#c3c0ff", primaryGrad:"linear-gradient(135deg,#4f46e5,#7c3aed)",
+    shadow:"rgba(6,14,32,0.4)", bg2:"#131b2e"
+  };
+  var saved = lsGet2("pyk_msgs");
+  var [msgs, setMsgs] = useState(Array.isArray(saved) ? saved : []);
+  var [input, setInput] = useState("");
+  var [busy, setBusy] = useState(false);
+  var [image, setImage] = useState(null); // base64 image
+  var [imagePreview, setImagePreview] = useState(null);
+  var endRef = useRef(null);
+  var taRef = useRef(null);
+  var fileRef = useRef(null);
+  var cameraRef = useRef(null);
+  var progRef = useRef(prog);
+  var densRef = useRef(dens);
+  var msgsRef = useRef(msgs);
+  useEffect(function() { progRef.current = prog; }, [prog]);
+  useEffect(function() { densRef.current = dens; }, [dens]);
+  useEffect(function() { msgsRef.current = msgs; }, [msgs]);
+  useEffect(function() { lsSet2("pyk_msgs", msgs.slice(-60)); }, [msgs]);
+  useEffect(function() { if (endRef.current) endRef.current.scrollIntoView({behavior:"smooth"}); }, [msgs, busy]);
+
+  function handleImageSelect(e) {
+    var file = e.target.files && e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      var base64 = ev.target.result.split(",")[1];
+      setImage({base64: base64, type: file.type});
+      setImagePreview(ev.target.result);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function buildCtx() {
+    var p = progRef.current; var d = densRef.current;
+    var progTxt = "";
+    if (!p) { progTxt = "Henuz aktif program yok."; }
+    else {
+      var cd = Math.max(0, Math.ceil((new Date(p.targetDate)-new Date())/86400000));
+      var tot = 0, don = 0;
+      p.plan.forEach(function(day) { day.tasks.forEach(function(t) { tot++; if(t.done) don++; }); });
+      var today = new Date(); today.setHours(0,0,0,0);
+      var lines = [];
+      p.plan.forEach(function(day, di) {
+        var dd = new Date(today); dd.setDate(today.getDate()+di);
+        var rel = dd < today ? "[GECTI]" : dd.getTime()===today.getTime() ? "[BUGUN]" : "[gelecek]";
+        day.tasks.slice(0,3).forEach(function(t) { lines.push(rel+" Gun"+(di+1)+": "+t.i+" ("+(t.done?"yapildi":"bekliyor")+")"); });
+      });
+      progTxt = "Sinava "+cd+" gun kaldi. Ilerleme: %"+Math.round(don/tot*100)+" ("+don+"/"+tot+" tamamlandi).";
+      if (p.tytHedef) progTxt += "\nTYT hedef net: "+p.tytHedef;
+      if (p.aytHedef) progTxt += "\nAYT hedef net: "+p.aytHedef;
+      progTxt += "\n\nGOREVLER:\n"+lines.slice(0,30).join("\n");
+    }
+    var denTxt = d && d.length > 0
+      ? "\n\nSON DENEMELER:\n"+d.slice(0,5).map(function(den) {
+          var dt = new Date(den.tarih).toLocaleDateString("tr-TR",{day:"numeric",month:"long"});
+          return dt+" "+den.tip+" -> "+den.toplamNet+" net | "+Object.entries(den.detay).map(function(e){ return e[0]+": "+e[1].net+" net"; }).join(", ");
+        }).join("\n")
+      : "\n\nDeneme kaydi yok.";
+    return progTxt + denTxt;
+  }
+
+  function doSend(txt) {
+    if ((!txt && !image) || busy) return;
+    setBusy(true);
+    var sentTxt = txt || "";
+    var sentImg = image;
+    setInput("");
+    setImage(null);
+    setImagePreview(null);
+    if (taRef.current) taRef.current.style.height = "auto";
+    var u = user;
+
+    // Kullanıcı mesajı — görsel varsa göster
+    var userMsg = {role:"user", content: sentTxt || "Bu soruyu çözer misin?"};
+    if (sentImg) userMsg.imagePreview = "data:"+sentImg.type+";base64,"+sentImg.base64;
+    var newMsgs = msgsRef.current.concat([userMsg]);
+    setMsgs(newMsgs);
+
+    var sysPrompt = "Sen Tech AI'sin. PruvaYKS uygulamasinin yapay zeka asistanisin. Techno+ tarafindan gelistirildin.\n"
+      + (u ? "Ogrencinin adi: "+u.name+".\n" : "")
+      + "\nGOREV KURALLARI:\n"
+      + "1. Soru cozuyorsan ADIM ADIM coz. Hic atlama, her islem adimini yaz.\n"
+      + "2. Matematik sorularinda: once formulu yaz, sonra sayilari koy, sonra hesapla.\n"
+      + "3. Fizik/kimya sorularinda: once birim donusumu yap, sonra formul uygula.\n"
+      + "4. Turkce sorularinda: once kurali acikla, sonra soruya uygula.\n"
+      + "5. Yanlis cevap vermek yerine emin degilsen 'Bu konuyu tekrar kontrol et' de.\n"
+      + "6. Gorsel gonderildiyse: soruyu kelimesi kelimesine oku, secenek harflerini belirt, dogru cevabi bul.\n"
+      + "7. Cevap verdikten sonra NEDEN dogru oldugunu kisaca acikla.\n"
+      + "8. Konusmayi veda cumlesiyle BITIRME.\n"
+      + "9. Kisa ve net ol, gereksiz uzatma.\n"
+      + "10. Turkce yaz, dogal konус.\n\n"
+      + "LATEX KURALLARI (MUTLAKA UYULMALI):\n"
+      + "- Tum matematiksel formulleri, denklemleri ve kesirli ifadeleri LaTeX formatinda yaz.\n"
+      + "- Metin ici matematik icin tek dolar $...$ kullan. Ornek: $\\sin 2x$, $x^2 + 1$\n"
+      + "- Buyuk veya blok denklemler icin cift dolar $$...$$ kullan.\n"
+      + "- Kesirleri MUTLAKA \\frac{pay}{payda} yap. Asla a/b veya (a)/(b) yazma.\n"
+      + "- Carpma icin * yerine \\cdot kullan.\n"
+      + "- Trigonometri: \\sin, \\cos, \\tan (kucuk harf).\n"
+      + "- Kok: \\sqrt{x}, Us: x^{2}, Mutlak deger: |x|\n\n"
+      + buildCtx()
+      + "\n\nPROGRAM DEGISIKLIKLERI: [EKLE:konu:gun] veya [TARIH:YYYY-MM-DD]";
+
+    var groqMsgs = [{role:"system", content: sysPrompt}];
+
+    // Görsel varsa vision modeli kullan
+    if (sentImg) {
+      newMsgs.slice(-10).forEach(function(m, i) {
+        if (i === newMsgs.slice(-10).length - 1 && sentImg) {
+          // Son mesaj — görsel ekle
+          groqMsgs.push({
+            role: "user",
+            content: [
+              {type:"text", text: sentTxt || "Bu soruyu coz"},
+              {type:"image_url", image_url:{url:"data:"+sentImg.type+";base64,"+sentImg.base64}}
+            ]
+          });
+        } else {
+          groqMsgs.push({role: m.role === "assistant" ? "assistant" : "user", content: m.content});
+        }
+      });
+    } else {
+      newMsgs.forEach(function(m) {
+        groqMsgs.push({role: m.role === "assistant" ? "assistant" : "user", content: m.content || ""});
+      });
+    }
+
+    // Görsel varsa vision destekli model kullan
+    var model = sentImg ? "meta-llama/llama-4-scout-17b-16e-instruct" : GROQ_MODEL;
+
+    fetch(GROQ_URL, {
+      method:"POST",
+      headers:{"Content-Type":"application/json", "Authorization":"Bearer "+GROQ_KEY},
+      body:JSON.stringify({model:model, messages:groqMsgs, max_tokens:2000, temperature:0.7})
+    }).then(function(r){ return r.json(); })
+    .then(function(data) {
+      var text = "";
+      try { text = data.choices[0].message.content; }
+      catch(e) { text = "Yanit alinamadi: "+(data.error?data.error.message:JSON.stringify(data).slice(0,100)); }
+
+      // Parse and apply actions
+      var actions = [];
+      var clean = text
+        .replace(/\[EKLE:([^\]:]+):(\d+)\]/g, function(_, k, g) {
+          actions.push({type:"ekle", konu:k.trim(), gun:parseInt(g)});
+          return "";
+        })
+        .replace(/\[TARIH:([0-9-]+)\]/g, function(_, t) {
+          actions.push({type:"tarih", tarih:t});
+          return "";
+        })
+        .trim();
+
+      if (actions.length > 0) {
+        var cp2 = progRef.current;
+        var applied = [];
+        actions.forEach(function(action) {
+          if (action.type === "ekle") {
+            var curProg = progRef.current;
+            if (!curProg) {
+              // Program yoksa basit bir program oluştur
+              var today3 = new Date(); today3.setHours(0,0,0,0);
+              var targetDate = new Date(today3); targetDate.setDate(today3.getDate()+30);
+              curProg = {
+                plan: Array.from({length:30}, function(_, di) {
+                  var d = new Date(today3); d.setDate(today3.getDate()+di);
+                  return {tarih: d.toLocaleDateString("tr-TR",{weekday:"short",day:"numeric",month:"short"}), tasks:[], special:false, moral: MORALLER[di%MORALLER.length]};
+                }),
+                targetDate: targetDate.toISOString().slice(0,10),
+                tytHedef:"", aytHedef:"", hedef:"", plan_type:"AI", createdAt:new Date().toISOString()
+              };
+              applied.push("Yeni 30 gunluk program olusturuldu.");
+            }
+            var today2 = new Date(); today2.setHours(0,0,0,0);
+            var added = 0;
+            var newPlan = curProg.plan.map(function(day, di) {
+              var dd = new Date(today2); dd.setDate(today2.getDate()+di);
+              if (dd >= today2 && added < action.gun) {
+                added++;
+                return Object.assign({}, day, {tasks: day.tasks.concat([{i:"Tekrar: "+action.konu, t:"tekrar", n:"AI onerisi", done:false}])});
+              }
+              return day;
+            });
+            curProg = Object.assign({}, curProg, {plan:newPlan});
+            setProg(curProg);
+            try { localStorage.setItem("pyk_prog", JSON.stringify(curProg)); } catch(e) {}
+            // Firestore'a da kaydet
+            setTimeout(function(){ saveToCloud({prog: curProg}); }, 100);
+            applied.push("**\""+action.konu+"\"** programa eklendi ("+added+" gune)");
+          } else if (action.type === "tarih" && progRef.current) {
+            var updProg = Object.assign({}, progRef.current, {targetDate:action.tarih});
+            setProg(updProg);
+            try { localStorage.setItem("pyk_prog", JSON.stringify(updProg)); } catch(e) {}
+            var dt2 = new Date(action.tarih).toLocaleDateString("tr-TR",{day:"numeric",month:"long",year:"numeric"});
+            applied.push("**Sinav tarihi** "+dt2+" olarak guncellendi");
+          }
+        });
+        if (applied.length > 0) clean = clean + (clean ? "\n\n" : "") + applied.join("\n");
+      }
+
+      setMsgs(function(prev){ return prev.concat([{role:"assistant",content:clean||text}]); });
+      setBusy(false);
+
+      // Konuşmayı Firestore'a kaydet
+      try {
+        var chatDoc = {
+          fields: {
+            uid: {stringValue: fbUser ? fbUser.uid : "unknown"},
+            userMsg: {stringValue: sentTxt || "(gorsel)"},
+            aiMsg: {stringValue: (clean||text).slice(0, 2000)},
+            hasImage: {booleanValue: !!sentImg},
+            timestamp: {stringValue: new Date().toISOString()},
+            model: {stringValue: model}
+          }
+        };
+        var chatUrl = "https://firestore.googleapis.com/v1/projects/pruvayks/databases/(default)/documents/chats";
+        fetch(chatUrl, {
+          method: "POST",
+          headers: {"Content-Type":"application/json", "Authorization":"Bearer "+(fbUser?fbUser.idToken:"")},
+          body: JSON.stringify(chatDoc)
+        }).catch(function(){});
+      } catch(e) {}
+    }).catch(function(e) {
+      setMsgs(function(prev){ return prev.concat([{role:"assistant",content:"Bağlantı hatası: "+e.message}]); });
+      setBusy(false);
+    });
+  }
+
+  return (
+    React.createElement('div', { style: {position:"fixed",top:74,bottom:"calc(72px + env(safe-area-inset-bottom))",left:0,right:0,display:"flex",flexDirection:"column",background:"#0b1326"},}
+      , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 16px",
+        background:"rgba(19,27,46,0.95)",backdropFilter:"blur(24px)",
+        borderBottom:"1px solid rgba(79,70,229,0.1)",flexShrink:0},}
+        , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:10},}
+          , React.createElement('div', { style: {width:36,height:36,borderRadius:"50%",overflow:"hidden",
+            background:"linear-gradient(135deg,#4f46e5,#7c3aed)",
+            display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0},}
+            , React.createElement(BotAvatar, null)
+          )
+          , React.createElement('div', null
+            , React.createElement('div', { style: {fontSize:14,fontWeight:800,color:"#dae2fd",fontFamily:"Manrope"},}, "Tech AI" )
+            , React.createElement('div', { style: {fontSize:10,color:busy?"#f59e0b":"#24ddd1",fontWeight:600},}, busy?"⏳ Düşünüyor...":"● Çevrimiçi")
+          )
+        )
+        , msgs.length > 0 && (
+          React.createElement('button', { onClick: function(){ setMsgs([]); lsSet2("pyk_msgs",[]); },
+            style: {fontSize:11,fontWeight:600,color:"#918fa1",background:"rgba(70,69,85,0.2)",
+              border:"1px solid rgba(70,69,85,0.2)",borderRadius:8,padding:"5px 11px",cursor:"pointer"},}
+            , "Temizle"
+          )
+        )
+      )
+      , React.createElement('div', { style: {flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch",padding:"16px 12px 8px",display:"flex",flexDirection:"column",gap:12},}
+        , msgs.length===0 && !busy && (
+          React.createElement('div', { style: {textAlign:"center",padding:"24px 4px 0"},}
+            , React.createElement('div', { style: {width:64,height:64,borderRadius:"50%",background:"linear-gradient(135deg,#4f46e5,#7c3aed)",
+              display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px",fontSize:28},}, "🤖"
+
+            )
+            , React.createElement('div', { style: {fontSize:18,fontWeight:800,color:"#dae2fd",marginBottom:6,fontFamily:"Manrope"},}, "Tech AI" )
+            , React.createElement('div', { style: {fontSize:13,color:"#918fa1",marginBottom:20,lineHeight:1.6},}, "PruvaYKS yapay zeka asistanı."   , React.createElement('br', null), "Programını incelerim, analiz yaparım!"   )
+            , React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:8},}
+              , QUICK.map(function(q,i){
+                return (
+                  React.createElement('button', { key: i, onClick: function(){ doSend(q.t); },
+                    style: {background:"rgba(45,52,73,0.6)",backdropFilter:"blur(24px)",
+                      border:"1px solid rgba(70,69,85,0.2)",
+                      borderRadius:20,padding:"10px 16px",fontSize:12,fontWeight:600,
+                      color:"#c7c4d8",cursor:"pointer",textAlign:"left",
+                      display:"flex",alignItems:"center",gap:10},}
+                    , React.createElement('span', { style: {fontSize:16,width:24,flexShrink:0},}, q.e), q.t
+                  )
+                );
+              })
+            )
+          )
+        )
+        , msgs.map(function(msg,i){
+          var isUser = msg.role==="user";
+          return (
+            React.createElement('div', { key: i, style: {display:"flex",justifyContent:isUser?"flex-end":"flex-start",gap:8,alignItems:"flex-end"},}
+              , !isUser && (
+                React.createElement('div', { style: {width:32,height:32,borderRadius:"50%",flexShrink:0,
+                  background:"linear-gradient(135deg,#4f46e5,#7c3aed)",
+                  display:"flex",alignItems:"center",justifyContent:"center",fontSize:14},}, "🤖")
+              )
+              , React.createElement('div', { style: {maxWidth:"82%",
+                background:isUser?"linear-gradient(135deg,#4f46e5,#7c3aed)":"rgba(45,52,73,0.6)",
+                backdropFilter:isUser?"none":"blur(24px)",
+                color:"#dae2fd",
+                borderRadius:isUser?"18px 18px 4px 18px":"18px 18px 18px 4px",
+                padding:"11px 14px",fontSize:13,lineHeight:1.55,
+                border:"1px solid "+(isUser?"transparent":"rgba(70,69,85,0.2)"),
+                boxShadow:"0 2px 8px rgba(6,14,32,0.4)"},}
+                , msg.imagePreview && (
+                  React.createElement('img', { src: msg.imagePreview, alt: "", style: {maxWidth:"100%",borderRadius:8,marginBottom:6,display:"block"},})
+                )
+                , React.createElement(Md, { text: msg.content,})
+              )
+            )
+          );
+        })
+        , busy && (
+          React.createElement('div', { style: {display:"flex",gap:8,alignItems:"flex-end"},}
+            , React.createElement('div', { style: {width:32,height:32,borderRadius:"50%",flexShrink:0,
+              background:"linear-gradient(135deg,#4f46e5,#7c3aed)",
+              display:"flex",alignItems:"center",justifyContent:"center",fontSize:14},}, "🤖")
+            , React.createElement('div', { style: {background:"rgba(45,52,73,0.6)",backdropFilter:"blur(24px)",
+              borderRadius:"18px 18px 18px 4px",padding:"12px 16px",
+              border:"1px solid rgba(70,69,85,0.2)"},}
+              , React.createElement('div', { style: {display:"flex",gap:4},}
+                , [0,1,2].map(function(j){ return React.createElement('div', { key: j, style: {width:7,height:7,borderRadius:"50%",background:"#c3c0ff",animation:"bounce 1.2s ease-in-out "+(j*0.2)+"s infinite"},}); })
+              )
+            )
+          )
+        )
+        , React.createElement('div', { ref: endRef,})
+      )
+      , React.createElement('div', { style: {padding:"8px 12px",borderTop:"1px solid rgba(79,70,229,0.1)",
+        background:"rgba(11,19,38,0.9)",backdropFilter:"blur(24px)",
+        display:"flex",flexDirection:"column",gap:8,flexShrink:0},}
+        , imagePreview && (
+          React.createElement('div', { style: {position:"relative",display:"inline-block",alignSelf:"flex-start"},}
+            , React.createElement('img', { src: imagePreview, alt: "", style: {height:64,borderRadius:8,border:"1px solid rgba(79,70,229,0.3)"},})
+            , React.createElement('button', { onClick: function(){ setImage(null); setImagePreview(null); },
+              style: {position:"absolute",top:-6,right:-6,width:18,height:18,borderRadius:"50%",
+                background:"#ef4444",border:"none",color:"#fff",fontSize:10,cursor:"pointer",
+                display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700},}, "x")
+          )
+        )
+        , React.createElement('div', { style: {display:"flex",gap:8,alignItems:"flex-end"},}
+          , React.createElement('input', { ref: fileRef, type: "file", accept: "image/*", onChange: handleImageSelect, style: {display:"none"},})
+          , React.createElement('input', { ref: cameraRef, type: "file", accept: "image/*", capture: "environment", onChange: handleImageSelect, style: {display:"none"},})
+
+          /* Galeri butonu */
+          , React.createElement('button', { onClick: function(){ fileRef.current && fileRef.current.click(); },
+            style: {width:40,height:40,borderRadius:12,border:"1px solid rgba(70,69,85,0.3)",
+              background:"rgba(45,52,73,0.4)",cursor:"pointer",flexShrink:0,
+              display:"flex",alignItems:"center",justifyContent:"center",color:"#c7c4d8"},}
+            , React.createElement('svg', { viewBox: "0 0 24 24"   , fill: "none", stroke: "currentColor", strokeWidth: "2", style: {width:18,height:18},}
+              , React.createElement('rect', { x: "3", y: "3", width: "18", height: "18", rx: "2",}), React.createElement('circle', { cx: "8.5", cy: "8.5", r: "1.5",})
+              , React.createElement('polyline', { points: "21 15 16 10 5 21"     ,})
+            )
+          )
+
+          /* Kamera butonu */
+          , React.createElement('button', { onClick: function(){ cameraRef.current && cameraRef.current.click(); },
+            style: {width:40,height:40,borderRadius:12,border:"1px solid rgba(70,69,85,0.3)",
+              background:"rgba(45,52,73,0.4)",cursor:"pointer",flexShrink:0,
+              display:"flex",alignItems:"center",justifyContent:"center",color:"#24ddd1"},}
+            , React.createElement('svg', { viewBox: "0 0 24 24"   , fill: "none", stroke: "currentColor", strokeWidth: "2", style: {width:18,height:18},}
+              , React.createElement('path', { d: "M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"                      ,})
+              , React.createElement('circle', { cx: "12", cy: "13", r: "4",})
+            )
+          )
+          , React.createElement('textarea', { ref: taRef, value: input,
+            onChange: function(e){ setInput(e.target.value); e.target.style.height="auto"; e.target.style.height=Math.min(e.target.scrollHeight,120)+"px"; },
+            onKeyDown: function(e){ if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();doSend(input.trim());} },
+            placeholder: "Soru sor veya fotograf gonder..."    , rows: 1,
+            style: {flex:1,padding:"10px 14px",borderRadius:24,
+              border:"1px solid rgba(70,69,85,0.3)",
+              background:"rgba(45,52,73,0.6)",backdropFilter:"blur(24px)",
+              color:"#dae2fd",fontSize:14,outline:"none",resize:"none",
+              lineHeight:1.4,maxHeight:120,overflowY:"auto",fontFamily:"Inter,sans-serif"},})
+          , React.createElement('button', { onClick: function(){ doSend(input.trim()); }, disabled: busy||(!input.trim()&&!image),
+            style: {width:44,height:44,borderRadius:16,border:"none",
+              cursor:busy||(!input.trim()&&!image)?"not-allowed":"pointer",flexShrink:0,
+              display:"flex",alignItems:"center",justifyContent:"center",
+              background:busy||(!input.trim()&&!image)?"rgba(70,69,85,0.3)":"linear-gradient(135deg,#4f46e5,#7c3aed)",
+              boxShadow:busy||(!input.trim()&&!image)?"none":"0 4px 12px rgba(79,70,229,.4)"},}
+            , React.createElement('svg', { viewBox: "0 0 24 24"   , fill: "none", stroke: busy||(!input.trim()&&!image)?"#918fa1":"#fff", strokeWidth: "2", style: {width:18,height:18},}
+              , React.createElement('line', { x1: "22", y1: "2", x2: "11", y2: "13",})
+              , React.createElement('polygon', { points: "22 2 15 22 11 13 2 9 22 2"         ,})
+            )
+          )
+        )
+      )
+      , React.createElement('style', null, `@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}`)
+    )
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(PruvaYKS));
+</script></body></html>
